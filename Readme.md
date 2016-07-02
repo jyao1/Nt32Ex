@@ -20,3 +20,7 @@ This macro is defined in Nt32Pkg.dsc file.
 The purpose of Nt32Smm is to debug or test the CPU independent SMM infrastructure, such as PiSmmIpl, PiSmmCore, SmmVariable driver, etc.
 
 Nt32SMM cannot be used to validate CPU dependent driver such as PiSmmCpu, or chipsec dependent driver, such as SmmAccess, SmmControl, SmmChildDispatch. Nt32SMM uses the fake version of these drivers in Nt32Pkg\Feature\Smm directory.
+
+## Known limitation:
+This package is only the sample code to show the concept.
+It does not have a full validation and does not meet the production quality yet.

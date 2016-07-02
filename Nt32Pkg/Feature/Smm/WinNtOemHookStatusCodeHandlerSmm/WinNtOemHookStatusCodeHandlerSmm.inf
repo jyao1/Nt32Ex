@@ -1,0 +1,53 @@
+## @file
+# OEM hook status code handler driver which produces general handler and hook it
+# onto the DXE status code router.
+#
+# Copyright (c) 2007 - 2011, Intel Corporation. All rights reserved.<BR>
+# This program and the accompanying materials
+# are licensed and made available under the terms and conditions of the BSD License
+# which accompanies this distribution.  The full text of the license may be found at
+# http://opensource.org/licenses/bsd-license.php
+#
+# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = WinNtOemHookStatusCodeHandlerSmm
+  FILE_GUID                      = B1E5A507-CD1B-4a44-85FA-AFAAF1E55D09
+  MODULE_TYPE                    = DXE_SMM_DRIVER
+  VERSION_STRING                 = 1.0
+  PI_SPECIFICATION_VERSION       = 0x0001000A
+  ENTRY_POINT                    = WinNtOemHookStatusCodeHandlerSmmEntry
+
+#
+# The following information is for reference only and not required by the build tools.
+#
+#  VALID_ARCHITECTURES           = IA32
+#
+#  HOB Guid C Name: gEfiWinNtThunkProtocolGuid Hob Type: GUID_EXTENSION
+#
+
+[Sources]
+  WinNtOemHookStatusCodeHandlerSmm.c
+
+
+[Packages]
+  Nt32Pkg/Nt32Pkg.dec
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+
+[LibraryClasses]
+  DebugLib
+  UefiDriverEntryPoint
+  SmmServicesTableLib
+  OemHookStatusCodeLib
+
+[Protocols]
+  gEfiSmmRscHandlerProtocolGuid                    ## CONSUMES
+
+[Depex]
+  gEfiSmmRscHandlerProtocolGuid

@@ -1,0 +1,78 @@
+## @file
+# Component description file for Nt32 Fimware Volume Block DXE driver module.
+#
+# This DXE runtime driver implements and produces the Fimware Volue Block Protocol on
+#  NT32 emulator.
+# Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
+#
+#  This program and the accompanying materials
+#  are licensed and made available under the terms and conditions of the BSD License
+#  which accompanies this distribution. The full text of the license may be found at
+#  http://opensource.org/licenses/bsd-license.php
+#  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = FvbServicesRuntimeSmm
+  FILE_GUID                      = B23ED876-80E5-4418-B7F1-D2849ECF3DEF
+  MODULE_TYPE                    = DXE_SMM_DRIVER
+  VERSION_STRING                 = 1.0
+  PI_SPECIFICATION_VERSION       = 0x0001000A
+  ENTRY_POINT                    = FvbInitialize
+
+#
+# The following information is for reference only and not required by the build tools.
+#
+#  VALID_ARCHITECTURES           = IA32
+#
+
+[Sources]
+  FvbInfo.c
+  FwBlockService.h
+  FWBlockServiceSmm.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  Nt32Pkg/Nt32Pkg.dec
+
+[LibraryClasses]
+  UefiBootServicesTableLib
+  MemoryAllocationLib
+  BaseMemoryLib
+  HobLib
+  DebugLib
+  DxeServicesTableLib
+  SmmServicesTableLib
+  BaseLib
+  UefiDriverEntryPoint
+  UefiLib
+  PcdLib
+
+[Protocols]
+  gEfiSmmFirmwareVolumeBlockProtocolGuid        # PROTOCOL ALWAYS_PRODUCED
+  gEfiDevicePathProtocolGuid                    # PROTOCOL SOMETIMES_PRODUCED
+
+[FixedPcd]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageVariableSize
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwWorkingSize
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwSpareSize
+  gEfiNt32PkgTokenSpaceGuid.PcdWinNtFlashFvRecoverySize
+  gEfiNt32PkgTokenSpaceGuid.PcdWinNtFirmwareBlockSize
+  gEfiNt32PkgTokenSpaceGuid.PcdWinNtFlashNvStorageEventLogSize
+
+[Pcd]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwWorkingBase
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwSpareBase
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageVariableBase
+  gEfiNt32PkgTokenSpaceGuid.PcdWinNtFirmwareFdSize
+  gEfiNt32PkgTokenSpaceGuid.PcdWinNtFlashFvRecoveryBase
+  gEfiNt32PkgTokenSpaceGuid.PcdWinNtFlashNvStorageEventLogBase
+
+[Depex]
+  TRUE
+  

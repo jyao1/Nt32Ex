@@ -28,6 +28,8 @@ Revision History
 // The protocols, PPI and GUID defintions for this module
 //
 #include <Ppi/NtFwh.h>
+#include <Ppi/FirmwareVolumeInfo.h>
+#include <Guid/FirmwareFileSystem2.h>
 //
 // The Library classes this module consumes
 //
@@ -35,6 +37,7 @@ Revision History
 #include <Library/PeimEntryPoint.h>
 #include <Library/HobLib.h>
 #include <Library/PcdLib.h>
+#include <Library/PeiServicesLib.h>
 
 EFI_STATUS
 EFIAPI
@@ -48,7 +51,7 @@ Routine Description:
   Perform a call-back into the SEC simulator to get address of the Firmware Hub
 
 Arguments:
-  FfsHeader   - Ffs Header availible to every PEIM
+  FfsHeader   - Ffs Header available to every PEIM
   PeiServices - General purpose services available to every PEIM.
     
 Returns:
@@ -63,8 +66,11 @@ Returns:
   EFI_FIRMWARE_VOLUME_HEADER  *FvHeader;
   UINT64                      FdSize;
   UINTN                       Index;
+  EFI_BOOT_MODE               BootMode;
 
-  DEBUG ((EFI_D_ERROR, "NT 32 Firmware Volume PEIM Loaded\n"));
+  BootMode = GetBootModeHob();
+
+  DEBUG ((EFI_D_ERROR, "NT 32 Firmware Volume PEIM Loaded - BootMode (0x%x)\n", BootMode));
 
   //
   // Get the Fwh Information PPI
@@ -90,12 +96,39 @@ Returns:
       //
       FvHeader = (EFI_FIRMWARE_VOLUME_HEADER *) (UINTN) FdBase;
 
-      //
-      // Make an FV Hob for the first FV in the FD
-      //
-      BuildFvHob (FdBase, FvHeader->FvLength);
-
       if (Index == 0) {
+        FvHeader = (EFI_FIRMWARE_VOLUME_HEADER *)((UINTN)FdBase + FixedPcdGet32(PcdWinNtFlashFvRecoveryBase));
+        BuildFvHob((UINT64)(UINTN)FvHeader, FvHeader->FvLength);
+        DEBUG((EFI_D_INFO, "BuildFvHob (FvRecovery) - 0x%lx - 0x%lx\n", (UINT64)(UINTN)FvHeader, FvHeader->FvLength));
+
+        //
+        // Do we report Variable FV? Yes, because:
+        // 1) The variable FV header corruption should be handled by FVB DXE driver.
+        // 2) The variable data corruption should be handled by default variable hob solution.
+        // So it is safety to report Variable FV here.
+        //
+        FvHeader = (EFI_FIRMWARE_VOLUME_HEADER *)((UINTN)FdBase + FixedPcdGet32(PcdWinNtFlashNvStorageVariableBase));
+        BuildFvHob((UINT64)(UINTN)FvHeader, FvHeader->FvLength);
+        DEBUG((EFI_D_INFO, "BuildFvHob (Variable) - 0x%lx - 0x%lx\n", (UINT64)(UINTN)FvHeader, FvHeader->FvLength));
+
+        FvHeader = (EFI_FIRMWARE_VOLUME_HEADER *)((UINTN)FdBase + FixedPcdGet32(PcdWinNtMicrocodeFvBase));
+        BuildFvHob((UINT64)(UINTN)FvHeader, FvHeader->FvLength);
+        DEBUG((EFI_D_INFO, "BuildFvHob (Microcode) - 0x%lx - 0x%lx\n", (UINT64)(UINTN)FvHeader, FvHeader->FvLength));
+
+        if (BootMode != BOOT_IN_RECOVERY_MODE) {
+          FvHeader = (EFI_FIRMWARE_VOLUME_HEADER *)((UINTN)FdBase + FixedPcdGet32(PcdWinNtFlashFvMainBase));
+          BuildFvHob((UINT64)(UINTN)FvHeader, FvHeader->FvLength);
+          DEBUG((EFI_D_INFO, "BuildFvHob (FvMain) - 0x%lx - 0x%lx\n", (UINT64)(UINTN)FvHeader, FvHeader->FvLength));
+
+          PeiServicesInstallFvInfoPpi(
+            NULL,
+            (VOID *)FvHeader,
+            (UINT32)FvHeader->FvLength,
+            NULL,
+            NULL
+            );
+        }
+
         //
         // Assume the first FD was produced by the NT32.DSC
         //  All these strange offests are needed to keep in
@@ -105,26 +138,29 @@ Returns:
           EFI_RESOURCE_FIRMWARE_DEVICE,
           (EFI_RESOURCE_ATTRIBUTE_PRESENT | EFI_RESOURCE_ATTRIBUTE_INITIALIZED | EFI_RESOURCE_ATTRIBUTE_UNCACHEABLE),
           FdBase,
-          ( 
-            FvHeader->FvLength + 
-            PcdGet32 (PcdFlashNvStorageVariableSize) +
-            PcdGet32 (PcdFlashNvStorageFtwWorkingSize) +
-            PcdGet32 (PcdFlashNvStorageFtwSpareSize) +
-            PcdGet32 (PcdWinNtFlashNvStorageEventLogSize)
-          )
+          FdSize
           );
-        //
-        // Hard code the address of the spare block and variable services.
-        //  Assume it's a hard coded offset from FV0 in FD0.
-        //
-        FdSize  = 
-          PcdGet32 (PcdFlashNvStorageVariableSize) +
-          PcdGet32 (PcdFlashNvStorageFtwWorkingSize) +
-          PcdGet32 (PcdFlashNvStorageFtwSpareSize) +
-          PcdGet32 (PcdWinNtFlashNvStorageEventLogSize);
-
-        BuildFvHob (FdBase + PcdGet32 (PcdWinNtFlashNvStorageVariableBase), FdSize);
+        ASSERT(FdSize >= PcdGet32(PcdWinNtFlashFvRecoverySize) + 
+                         PcdGet32(PcdWinNtFlashFvMainSize) +
+                         PcdGet32(PcdFlashNvStorageVariableSize) +
+                         PcdGet32(PcdFlashNvStorageFtwWorkingSize) +
+                         PcdGet32(PcdFlashNvStorageFtwSpareSize) +
+                         PcdGet32(PcdWinNtFlashNvStorageEventLogSize) +
+                         PcdGet32(PcdWinNtMicrocodeFvSize));
       } else {
+        FvHeader = (EFI_FIRMWARE_VOLUME_HEADER *)(UINTN)FdBase;
+        do {
+          if (FvHeader->Signature != EFI_FVH_SIGNATURE) {
+            break;
+          }
+          //
+          // Make an FV Hob for the FV in the FD
+          //
+          BuildFvHob((UINT64)(UINTN)FvHeader, FvHeader->FvLength);
+          DEBUG((EFI_D_INFO, "BuildFvHob - 0x%lx - 0x%lx\n", (UINT64)(UINTN)FvHeader, FvHeader->FvLength));
+          FvHeader = (EFI_FIRMWARE_VOLUME_HEADER *)(UINTN)((UINTN)FvHeader + FvHeader->FvLength);
+        } while ((UINTN)FvHeader < (UINTN)(FdBase + FdSize));
+
         //
         // For other FD's just map them in.
         //

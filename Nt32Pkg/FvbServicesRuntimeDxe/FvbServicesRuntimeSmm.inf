@@ -39,6 +39,7 @@
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
   Nt32Pkg/Nt32Pkg.dec
+  UefiCpuPkg/UefiCpuPkg.dec
 
 [LibraryClasses]
   UefiBootServicesTableLib
@@ -62,15 +63,16 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwWorkingSize
   gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwSpareSize
   gEfiNt32PkgTokenSpaceGuid.PcdWinNtFlashFvRecoverySize
+  gEfiNt32PkgTokenSpaceGuid.PcdWinNtFlashFvMainSize
   gEfiNt32PkgTokenSpaceGuid.PcdWinNtFirmwareBlockSize
   gEfiNt32PkgTokenSpaceGuid.PcdWinNtFlashNvStorageEventLogSize
+  gEfiNt32PkgTokenSpaceGuid.PcdWinNtMicrocodeFvSize
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwWorkingBase
   gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwSpareBase
   gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageVariableBase
   gEfiNt32PkgTokenSpaceGuid.PcdWinNtFirmwareFdSize
-  gEfiNt32PkgTokenSpaceGuid.PcdWinNtFlashFvRecoveryBase
   gEfiNt32PkgTokenSpaceGuid.PcdWinNtFlashNvStorageEventLogBase
 
 [Depex]

@@ -78,7 +78,7 @@ EFI_FVB_MEDIA_INFO  mPlatformFvbMediaInfo[] = {
         EFI_FVB2_ERASE_POLARITY |
         EFI_FVB2_ALIGNMENT_16,
       sizeof (EFI_FIRMWARE_VOLUME_HEADER) + sizeof (EFI_FV_BLOCK_MAP_ENTRY),
-      0xE947,   // CheckSum
+      0xF646,   // CheckSum
       0,        // ExtHeaderOffset
       {
         0,
@@ -86,6 +86,42 @@ EFI_FVB_MEDIA_INFO  mPlatformFvbMediaInfo[] = {
       2,  // Revision
       {
         FixedPcdGet32 (PcdWinNtFlashFvRecoverySize)/FixedPcdGet32 (PcdWinNtFirmwareBlockSize),
+        FixedPcdGet32 (PcdWinNtFirmwareBlockSize),
+      }
+    },
+    {
+      0,
+      0
+    }
+  },
+  //
+  // Main BOIS FVB
+  //
+  {
+    FixedPcdGet32 (PcdWinNtFlashFvMainSize),
+    {
+      {
+        0,
+      },  // ZeroVector[16]
+      EFI_FIRMWARE_FILE_SYSTEM2_GUID,
+      FixedPcdGet32 (PcdWinNtFlashFvMainSize),
+      EFI_FVH_SIGNATURE,
+      EFI_FVB2_MEMORY_MAPPED |  
+        EFI_FVB2_READ_ENABLED_CAP |
+        EFI_FVB2_READ_STATUS |
+        EFI_FVB2_WRITE_ENABLED_CAP |
+        EFI_FVB2_WRITE_STATUS |
+        EFI_FVB2_ERASE_POLARITY |
+        EFI_FVB2_ALIGNMENT_16,
+      sizeof (EFI_FIRMWARE_VOLUME_HEADER) + sizeof (EFI_FV_BLOCK_MAP_ENTRY),
+      0xF5DE,   // CheckSum
+      0,        // ExtHeaderOffset
+      {
+        0,
+      },  // Reserved[1]
+      2,  // Revision
+      {
+        FixedPcdGet32 (PcdWinNtFlashFvMainSize)/FixedPcdGet32 (PcdWinNtFirmwareBlockSize),
         FixedPcdGet32 (PcdWinNtFirmwareBlockSize),
       }
     },
@@ -138,7 +174,43 @@ EFI_FVB_MEDIA_INFO  mPlatformFvbMediaInfo[] = {
       0,
       0
     }
-  }
+  },
+  //
+  // Microcode FVB
+  //
+  {
+    FixedPcdGet32 (PcdWinNtMicrocodeFvSize),
+    {
+      {
+        0,
+      },  // ZeroVector[16]
+      EFI_FIRMWARE_FILE_SYSTEM2_GUID,
+      FixedPcdGet32 (PcdWinNtMicrocodeFvSize),
+      EFI_FVH_SIGNATURE,
+      EFI_FVB2_MEMORY_MAPPED |  
+        EFI_FVB2_READ_ENABLED_CAP |
+        EFI_FVB2_READ_STATUS |
+        EFI_FVB2_WRITE_ENABLED_CAP |
+        EFI_FVB2_WRITE_STATUS |
+        EFI_FVB2_ERASE_POLARITY |
+        EFI_FVB2_ALIGNMENT_16,
+      sizeof (EFI_FIRMWARE_VOLUME_HEADER) + sizeof (EFI_FV_BLOCK_MAP_ENTRY),
+      0xF742,   // CheckSum
+      0,        // ExtHeaderOffset
+      {
+        0,
+      },  // Reserved[1]
+      2,  // Revision
+      {
+        FixedPcdGet32 (PcdWinNtMicrocodeFvSize)/FixedPcdGet32 (PcdWinNtFirmwareBlockSize),
+        FixedPcdGet32 (PcdWinNtFirmwareBlockSize),
+      }
+    },
+    {
+      0,
+      0
+    }
+  },
 };
 
 EFI_STATUS

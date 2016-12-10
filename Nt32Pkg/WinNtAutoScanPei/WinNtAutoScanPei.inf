@@ -47,16 +47,20 @@
 [Ppis]
   gPeiNtAutoScanPpiGuid                         # PPI ALWAYS_CONSUMED
   gEfiPeiReadOnlyVariable2PpiGuid               # PPI ALWAYS_CONSUMED
+  gPeiCapsulePpiGuid
 
 [Guids]
   gEfiMemoryTypeInformationGuid
   gEfiSmmPeiSmramMemoryReserveGuid
+  gEfiWinNtMemoryLayoutGuid
 
 [FeaturePcd]
   gEfiNt32PkgTokenSpaceGuid.PcdWinNtSmmEnable
+  gEfiNt32PkgTokenSpaceGuid.PcdWinNtCapsuleEnable
 
 [Pcd]
   gEfiNt32PkgTokenSpaceGuid.PcdWinNtSmramSize
+  gEfiNt32PkgTokenSpaceGuid.PcdWinNtMemorySizeForSecMain
 
 [Depex]
   gPeiNtAutoScanPpiGuid AND gEfiPeiMasterBootModePpiGuid AND gEfiPeiReadOnlyVariable2PpiGuid

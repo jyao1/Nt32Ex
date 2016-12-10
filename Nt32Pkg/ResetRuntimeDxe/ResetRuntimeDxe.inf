@@ -41,6 +41,15 @@
   WinNtLib
   UefiDriverEntryPoint
   DebugLib
+  HobLib
+  BaseLib
+  PrintLib
+
+[FeaturePcd]
+  gEfiNt32PkgTokenSpaceGuid.PcdWinNtCapsuleEnable
+
+[Guids]
+  gEfiWinNtMemoryLayoutGuid
 
 [Protocols]
   gEfiResetArchProtocolGuid                     # PROTOCOL ALWAYS_PRODUCED

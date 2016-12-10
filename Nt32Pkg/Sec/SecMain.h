@@ -30,6 +30,8 @@ Abstract:
 #include <Ppi/StatusCode.h>
 #include <Ppi/NtFwh.h>
 #include <Ppi/TemporaryRamSupport.h>
+#include <Ppi/NtRecovery.h>
+#include <Ppi/NtPeiServicesTablePointer.h>
 #include <Library/PcdLib.h>
 #include <Library/DebugLib.h>
 #include <Library/PrintLib.h>
@@ -524,9 +526,9 @@ Returns:
 ;
 
 UINTN
-CountSeperatorsInString (
+CountSeparatorsInString (
   IN  CONST CHAR16   *String,
-  IN  CHAR16   Seperator
+  IN  CHAR16   Separator
   )
 /*++
 
@@ -537,7 +539,7 @@ Routine Description:
 Arguments:
 
   String    - TODO: add argument description
-  Seperator - TODO: add argument description
+  Separator - TODO: add argument description
 
 Returns:
 
@@ -555,5 +557,22 @@ SecTemporaryRamSupport (
   IN UINTN                    CopySize
   );
 
+EFI_STATUS
+EFIAPI
+SecWinNtIsRecoveryMode (
+  OUT BOOLEAN  *RecoveryMode
+  );
+
+VOID
+EFIAPI
+SecSetPeiServicesTablePointer(
+  IN CONST EFI_PEI_SERVICES ** PeiServicesTablePointer
+  );
+
+CONST EFI_PEI_SERVICES **
+EFIAPI
+SecGetPeiServicesTablePointer(
+  VOID
+  );
 
 extern EFI_WIN_NT_THUNK_PROTOCOL  *gWinNt;

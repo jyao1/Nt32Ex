@@ -36,12 +36,14 @@
   Nt32Pkg/Nt32Pkg.dec
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
+  UefiCpuPkg/UefiCpuPkg.dec
 
 [LibraryClasses]
   HobLib
   PeimEntryPoint
   DebugLib
-  PcdLib  
+  PcdLib
+  PeiServicesLib
 
 [Ppis]
   gNtFwhPpiGuid                                 # PPI ALWAYS_CONSUMED
@@ -49,6 +51,8 @@
 [Pcd]
   gEfiNt32PkgTokenSpaceGuid.PcdWinNtFlashFvRecoveryBase
   gEfiNt32PkgTokenSpaceGuid.PcdWinNtFlashFvRecoverySize
+  gEfiNt32PkgTokenSpaceGuid.PcdWinNtFlashFvMainBase
+  gEfiNt32PkgTokenSpaceGuid.PcdWinNtFlashFvMainSize
   gEfiNt32PkgTokenSpaceGuid.PcdWinNtFlashNvStorageEventLogBase
   gEfiNt32PkgTokenSpaceGuid.PcdWinNtFlashNvStorageEventLogSize
   gEfiNt32PkgTokenSpaceGuid.PcdWinNtFlashNvStorageVariableBase
@@ -56,6 +60,8 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwWorkingSize
   gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwSpareSize
   gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageVariableSize
+  gEfiNt32PkgTokenSpaceGuid.PcdWinNtMicrocodeFvBase
+  gEfiNt32PkgTokenSpaceGuid.PcdWinNtMicrocodeFvSize
 
 [Depex]
   gNtFwhPpiGuid AND gEfiPeiMemoryDiscoveredPpiGuid

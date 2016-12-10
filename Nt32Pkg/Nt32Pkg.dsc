@@ -31,7 +31,7 @@
   OUTPUT_DIRECTORY               = Build/NT32$(ARCH)
   SUPPORTED_ARCHITECTURES        = IA32|X64
   BUILD_TARGETS                  = DEBUG|RELEASE|NOOPT
-  SKUID_IDENTIFIER               = DEFAULT
+  SKUID_IDENTIFIER               = ALL
   FLASH_DEFINITION               = Nt32Pkg/Nt32Pkg.fdf
   #
   # This flag is to control tool to generate PCD info for dynamic(ex) PCD,
@@ -46,10 +46,15 @@
   #
   DEFINE SECURE_BOOT_ENABLE      = TRUE
   DEFINE SMM_ENABLE              = TRUE
+  DEFINE CAPSULE_ENABLE          = TRUE
+  DEFINE RECOVERY_ENABLE         = TRUE
+  DEFINE MICROCODE_UPDATE_ENABLE = TRUE
   DEFINE NETWORK_ENABLE          = FALSE
-  DEFINE PERF_ENABLE             = TRUE
+  DEFINE PERF_ENABLE             = FALSE
   DEFINE PROFILE_ENABLE          = FALSE
   DEFINE SHELL_BUILD_ENABLE      = FALSE
+  
+#  DEFINE DSC_GLOBAL_BUILD_OPTIONS = /D EFI_SPECIFICATION_VERSION=0x00020000  /D PI_SPECIFICATION_VERSION=0x00000009  /D TIANO_RELEASE_VERSION=0x00080006 /D EFI_DEBUG /D EFI_FIRMWARE_VENDOR="L\"INTEL\"" /D EFI_BUILD_VERSION="L\"EDKII\""
 
 ################################################################################
 #
@@ -100,7 +105,7 @@
   HiiLib|MdeModulePkg/Library/UefiHiiLib/UefiHiiLib.inf
   DevicePathLib|MdePkg/Library/UefiDevicePathLibDevicePathProtocol/UefiDevicePathLibDevicePathProtocol.inf
   UefiDecompressLib|IntelFrameworkModulePkg/Library/BaseUefiTianoCustomDecompressLib/BaseUefiTianoCustomDecompressLib.inf
-  PeiServicesTablePointerLib|MdePkg/Library/PeiServicesTablePointerLib/PeiServicesTablePointerLib.inf
+  PeiServicesTablePointerLib|Nt32Pkg/Library/PeiServicesTablePointerLibNt32/PeiServicesTablePointerLibNt32.inf
   PeiServicesLib|MdePkg/Library/PeiServicesLib/PeiServicesLib.inf
   DxeServicesLib|MdePkg/Library/DxeServicesLib/DxeServicesLib.inf
   DxeServicesTableLib|MdePkg/Library/DxeServicesTableLib/DxeServicesTableLib.inf
@@ -118,7 +123,6 @@
   HttpLib|MdeModulePkg/Library/DxeHttpLib/DxeHttpLib.inf
   DpcLib|MdeModulePkg/Library/DxeDpcLib/DxeDpcLib.inf
   OemHookStatusCodeLib|MdeModulePkg/Library/OemHookStatusCodeLibNull/OemHookStatusCodeLibNull.inf
-  GenericBdsLib|IntelFrameworkModulePkg/Library/GenericBdsLib/GenericBdsLib.inf
   CustomizedDisplayLib|MdeModulePkg/Library/CustomizedDisplayLib/CustomizedDisplayLib.inf
   SecurityManagementLib|MdeModulePkg/Library/DxeSecurityManagementLib/DxeSecurityManagementLib.inf
 !if $(PERF_ENABLE) == TRUE
@@ -128,8 +132,11 @@
 !endif
 
   SerialPortLib|MdePkg/Library/BaseSerialPortLibNull/BaseSerialPortLibNull.inf
+!if $(CAPSULE_ENABLE)
+  CapsuleLib|MdeModulePkg/Library/DxeCapsuleLibFmp/DxeCapsuleLib.inf
+!else
   CapsuleLib|MdeModulePkg/Library/DxeCapsuleLibNull/DxeCapsuleLibNull.inf
-  ImageDecoderLib|MdeModulePkg/Library/ImageDecoderLib/ImageDecoderLib.inf
+!endif
   BootLogoLib|MdeModulePkg/Library/BootLogoLib/BootLogoLib.inf
   #
   # Platform
@@ -144,6 +151,8 @@
   DebugAgentLib|MdeModulePkg/Library/DebugAgentLibNull/DebugAgentLibNull.inf
   CpuExceptionHandlerLib|MdeModulePkg/Library/CpuExceptionHandlerLibNull/CpuExceptionHandlerLibNull.inf
   LockBoxLib|MdeModulePkg/Library/LockBoxNullLib/LockBoxNullLib.inf
+
+  RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
   
 !if $(SECURE_BOOT_ENABLE) == TRUE
   PlatformSecureLib|Nt32Pkg/Library/PlatformSecureLib/PlatformSecureLib.inf
@@ -156,6 +165,16 @@
   AuthVariableLib|MdeModulePkg/Library/AuthVariableLibNull/AuthVariableLibNull.inf
 !endif
   VarCheckLib|MdeModulePkg/Library/VarCheckLib/VarCheckLib.inf
+
+!if $(CAPSULE_ENABLE) || $(RECOVERY_ENABLE)
+  IniParsingLib|SignedCapsulePkg/Library/IniParsingLib/IniParsingLib.inf
+  EdkiiSystemCapsuleLib|SignedCapsulePkg/Library/EdkiiSystemCapsuleLib/EdkiiSystemCapsuleLib.inf
+!endif
+
+!if $(CAPSULE_ENABLE)
+  PlatformFlashAccessLib|Nt32Pkg/Feature/Capsule/Library/PlatformFlashAccessLib/PlatformFlashAccessLib.inf
+  MicrocodeFlashAccessLib|Nt32Pkg/Feature/Capsule/Library/PlatformFlashAccessLib/PlatformFlashAccessLib.inf
+!endif
 
 [LibraryClasses.common.USER_DEFINED]
   DebugLib|MdePkg/Library/BaseDebugLibNull/BaseDebugLibNull.inf
@@ -242,7 +261,7 @@
 !if $(SECURE_BOOT_ENABLE) == TRUE
   BaseCryptLib|CryptoPkg/Library/BaseCryptLib/SmmCryptLib.inf
 !endif
-  SmmMemLib|MdePkg/Library/SmmMemLib/SmmMemLib.inf
+  SmmMemLib|Nt32Pkg/Feature/Smm/Library/SmmMemLibWinNt/SmmMemLib.inf
 !if $(PERF_ENABLE) == TRUE
   PerformanceLib|MdeModulePkg/Library/SmmPerformanceLib/SmmPerformanceLib.inf
 !endif
@@ -267,6 +286,9 @@
 !if $(SECURE_BOOT_ENABLE) == TRUE
   BaseCryptLib|CryptoPkg/Library/BaseCryptLib/RuntimeCryptLib.inf
 !endif
+!if $(CAPSULE_ENABLE)
+  CapsuleLib|MdeModulePkg/Library/DxeCapsuleLibFmp/DxeRuntimeCapsuleLib.inf
+!endif
 
 ################################################################################
 #
@@ -283,14 +305,31 @@
 !if $(SMM_ENABLE)
   gEfiNt32PkgTokenSpaceGuid.PcdWinNtSmmEnable|TRUE
 !endif
+!if $(CAPSULE_ENABLE)
+  gEfiNt32PkgTokenSpaceGuid.PcdWinNtCapsuleEnable|TRUE
+  gEfiMdeModulePkgTokenSpaceGuid.PcdSupportUpdateCapsuleReset|TRUE
+!endif
+!if $(RECOVERY_ENABLE)
+  gEfiNt32PkgTokenSpaceGuid.PcdWinNtRecoveryEnable|TRUE
+!endif
 
 [PcdsFixedAtBuild]
 !if $(PROFILE_ENABLE)
   gEfiMdeModulePkgTokenSpaceGuid.PcdMemoryProfilePropertyMask|0x0
   gEfiMdeModulePkgTokenSpaceGuid.PcdMemoryProfileMemoryType|0x67F
 !endif
+
+!if $(CAPSULE_ENABLE) || $(RECOVERY_ENABLE)
+#  gEfiNt32PkgTokenSpaceGuid.PcdWinNtMemorySizeForSecMain|L"128!64"
+!else
   gEfiMdeModulePkgTokenSpaceGuid.PcdMaxSizeNonPopulateCapsule|0x0
   gEfiMdeModulePkgTokenSpaceGuid.PcdMaxSizePopulateCapsule|0x0
+!endif
+
+!if $(RECOVERY_ENABLE)
+  gEfiMdeModulePkgTokenSpaceGuid.PcdRecoveryFileName|L"..\\Fv\\Nt32Rec.Cap"
+!endif
+
   gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0x80000040
   gEfiMdePkgTokenSpaceGuid.PcdDebugPropertyMask|0x1f
   gEfiNt32PkgTokenSpaceGuid.PcdWinNtFirmwareVolume|L"..\\Fv\\Nt32.fd"
@@ -339,6 +378,10 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwSpareBase64|0
   gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwWorkingBase64|0
   gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageVariableBase64|0
+!if $(MICROCODE_UPDATE_ENABLE)
+  gUefiCpuPkgTokenSpaceGuid.PcdCpuMicrocodePatchAddress|0
+  gUefiCpuPkgTokenSpaceGuid.PcdCpuMicrocodePatchRegionSize|0
+!endif
 
 [PcdsDynamicDefault.Ia32]
 #  gEfiNt32PkgTokenSpaceGuid.PcdWinNtFileSystem|L".!..\..\..\..\EdkShellBinPkg\Bin\Ia32\Apps"|VOID*|106
@@ -353,6 +396,13 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdSetupConOutRow|L"SetupConsoleConfig"|gEfiNt32PkgTokenSpaceGuid|0x4|25
   gEfiMdePkgTokenSpaceGuid.PcdPlatformBootTimeOut|L"Timeout"|gEfiGlobalVariableGuid|0x0|10
   gEfiMdePkgTokenSpaceGuid.PcdHardwareErrorRecordLevel|L"HwErrRecSupport"|gEfiGlobalVariableGuid|0x0|1
+
+[PcdsDynamicExDefault]
+!if $(CAPSULE_ENABLE) || $(RECOVERY_ENABLE)
+  gEfiSignedCapsulePkgTokenSpaceGuid.PcdEdkiiSystemFirmwareImageDescriptor|{0x0}|VOID*|0x100
+  gEfiMdeModulePkgTokenSpaceGuid.PcdSystemFmpCapsuleImageTypeIdGuid|{0xD3, 0xEE, 0x7E, 0x3F, 0x91, 0xF4, 0x1E, 0x40, 0x9E, 0xCE, 0x74, 0x31, 0x32, 0x2E, 0xAD, 0xF6}
+  gEfiSignedCapsulePkgTokenSpaceGuid.PcdEdkiiSystemFirmwareFileGuid|{0xB2, 0x9E, 0x9C, 0xAF, 0xAD, 0x12, 0x3E, 0x4D, 0xA4, 0xD4, 0x96, 0xF6, 0xC9, 0x96, 0x62, 0x15}
+!endif
 
 ###################################################################################################
 #
@@ -382,6 +432,11 @@
     MSFT:*_*_X64_CC_FLAGS == /nologo /W4 /WX /Gy /c /D UNICODE /Od /FIAutoGen.h /EHs-c- /GF /Gs8192 /Zi /Gm /D _CRT_SECURE_NO_WARNINGS /D _CRT_SECURE_NO_DEPRECATE
   }
 
+!if $(CAPSULE_ENABLE) || $(RECOVERY_ENABLE)
+  # FMP image decriptor
+  Nt32Pkg/Feature/Capsule/SystemFirmwareDescriptor/SystemFirmwareDescriptor.inf
+!endif
+
   ##
   #  PEI Phase modules
   ##
@@ -403,14 +458,32 @@
   Nt32Pkg/WinNtAutoScanPei/WinNtAutoScanPei.inf
   Nt32Pkg/WinNtFirmwareVolumePei/WinNtFirmwareVolumePei.inf
   Nt32Pkg/WinNtThunkPPIToProtocolPei/WinNtThunkPPIToProtocolPei.inf
+!if $(CAPSULE_ENABLE)
+  MdeModulePkg/Universal/CapsulePei/CapsulePei.inf
+!endif
+
+!if $(RECOVERY_ENABLE)
+  FatPkg/FatPei/FatPei.inf
+  MdeModulePkg/Universal/Disk/CdExpressPei/CdExpressPei.inf
+  Nt32Pkg/Feature/Recovery/WinNtRecoveryPei/WinNtRecoveryPei.inf
+  Nt32Pkg/Feature/Recovery/WinNtRecoveryRamFsPei/WinNtRecoveryRamFsPei.inf
+  SignedCapsulePkg/Universal/RecoveryModuleLoadPei/RecoveryModuleLoadPei.inf {
+    <LibraryClasses>
+      FmpAuthenticationLib|SecurityPkg/Library/FmpAuthenticationLibRsa2048Sha256/FmpAuthenticationLibRsa2048Sha256.inf
+      PcdLib|MdePkg/Library/PeiPcdLib/PeiPcdLib.inf
+  }
+!endif
+
   MdeModulePkg/Core/DxeIplPeim/DxeIpl.inf
+
+  Nt32Pkg/ResetPei/ResetPei.inf
 
   ##
   #  DXE Phase modules
   ##
   MdeModulePkg/Core/Dxe/DxeMain.inf {
     <PcdsFixedAtBuild>
-      gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0x80400040
+      gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0x80000040
     <LibraryClasses>
       NULL|MdeModulePkg/Library/DxeCrc32GuidedSectionExtractLib/DxeCrc32GuidedSectionExtractLib.inf
       DevicePathLib|MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.inf
@@ -445,6 +518,7 @@
   Nt32Pkg/CpuRuntimeDxe/CpuRuntimeDxe.inf
 !if $(SMM_ENABLE)
   MdeModulePkg/Universal/FaultTolerantWriteDxe/FaultTolerantWriteSmm.inf
+  MdeModulePkg/Universal/FaultTolerantWriteDxe/FaultTolerantWriteSmmDxe.inf
 !else
   MdeModulePkg/Universal/FaultTolerantWriteDxe/FaultTolerantWriteDxe.inf
 !endif
@@ -515,7 +589,7 @@
       gEfiMdeModulePkgTokenSpaceGuid.PcdPropertiesTableEnable|TRUE
       gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0x80400040
     <LibraryClasses>
-      DebugLib|Nt32Pkg/Library/DxeDebugLibWinNt/DxeDebugLibWinNt.inf
+      DebugLib|Nt32Pkg/Library/SmmDebugLibWinNt/SmmDebugLibWinNt.inf
     <BuildOptions>
       DEBUG_*_*_CC_FLAGS = /Od
   }
@@ -555,8 +629,11 @@
 !endif
 
   MdeModulePkg/Universal/BdsDxe/BdsDxe.inf {
+    <PcdsFixedAtBuild>
+      gEfiMdeModulePkgTokenSpaceGuid.PcdPropertiesTableEnable|TRUE
+      gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0x80400040
     <LibraryClasses>
-      NULL|MdeModulePkg/Library/BmpImageDecoderLib/BmpImageDecoderLib.inf
+      DebugLib|Nt32Pkg/Library/DxeDebugLibWinNt/DxeDebugLibWinNt.inf
   }
   MdeModulePkg/Application/UiApp/UiApp.inf{
     <LibraryClasses>
@@ -578,6 +655,36 @@
   MdeModulePkg/Universal/Acpi/AcpiTableDxe/AcpiTableDxe.inf
 
   MdeModulePkg/Universal/PlatformDriOverrideDxe/PlatformDriOverrideDxe.inf
+  MdeModulePkg/Universal/LoadFileOnFv2/LoadFileOnFv2.inf
+  MdeModulePkg/Application/BootManagerMenuApp/BootManagerMenuApp.inf {
+    <LibraryClasses>
+      NULL|IntelFrameworkModulePkg/Library/LegacyBootManagerLib/LegacyBootManagerLib.inf
+  }
+  MdeModulePkg/Logo/LogoDxe.inf
+
+!if $(CAPSULE_ENABLE)
+  MdeModulePkg/Universal/EsrtDxe/EsrtDxe.inf
+  
+  SignedCapsulePkg/Universal/SystemFirmwareUpdate/SystemFirmwareReportDxe.inf {
+    <LibraryClasses>
+      FmpAuthenticationLib|SecurityPkg/Library/FmpAuthenticationLibPkcs7/FmpAuthenticationLibPkcs7.inf
+  }
+  SignedCapsulePkg/Universal/SystemFirmwareUpdate/SystemFirmwareUpdateDxe.inf {
+    <LibraryClasses>
+      FmpAuthenticationLib|SecurityPkg/Library/FmpAuthenticationLibPkcs7/FmpAuthenticationLibPkcs7.inf
+  }
+
+  MdeModulePkg/Application/CapsuleApp/CapsuleApp.inf
+!endif
+
+!if $(MICROCODE_UPDATE_ENABLE)
+  Nt32Pkg/Feature/Microcode/MicrocodeUpdateDxe/MicrocodeUpdateDxe.inf
+
+  Nt32Pkg/Feature/Microcode/MicrocodeDummy/MicrocodeUpdates.inf {
+    <BuildOptions>
+      # *_*_*_GENFW_FLAGS = -a 0x800 -p 0xFF
+  }
+!endif
 
 !if $(SHELL_BUILD_ENABLE) == TRUE
   ShellPkg/Application/Shell/Shell.inf {

@@ -37,6 +37,7 @@
   Nt32Pkg/Nt32Pkg.dec
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
+  UefiCpuPkg/UefiCpuPkg.dec
 
 [LibraryClasses]
   PcdLib
@@ -61,6 +62,15 @@
   gEfiNt32PkgTokenSpaceGuid.PcdWinNtFlashNvStorageFtwWorkingBase
   gEfiNt32PkgTokenSpaceGuid.PcdWinNtFlashNvStorageFtwSpareBase
   gEfiNt32PkgTokenSpaceGuid.PcdWinNtFlashNvStorageVariableBase
+  
+  gUefiCpuPkgTokenSpaceGuid.PcdCpuMicrocodePatchAddress            ## CONSUMES
+  gUefiCpuPkgTokenSpaceGuid.PcdCpuMicrocodePatchRegionSize         ## CONSUMES
+  gEfiNt32PkgTokenSpaceGuid.PcdWinNtMicrocodeFvBase
+  gEfiNt32PkgTokenSpaceGuid.PcdWinNtMicrocodeFvSize
+  gEfiNt32PkgTokenSpaceGuid.PcdWinNtFdBaseAddressRuntime
+
+  gEfiNt32PkgTokenSpaceGuid.PcdWinNtFileSystem
+  gEfiMdePkgTokenSpaceGuid.PcdPlatformBootTimeOut
 
 [Depex]
   gNtFwhPpiGuid

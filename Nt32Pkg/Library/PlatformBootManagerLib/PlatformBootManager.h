@@ -17,11 +17,15 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <PiDxe.h>
 #include <Guid/WinNtSystemConfig.h>
 #include <Guid/EventGroup.h>
+#include <Guid/CapsuleVendor.h>
 #include <Protocol/GenericMemoryTest.h>
 #include <Protocol/WinNtThunk.h>
 #include <Protocol/WinNtIo.h>
 #include <Protocol/LoadedImage.h>
+#include <Protocol/FirmwareVolume2.h>
 #include <Protocol/DxeSmmReadyToLock.h>
+#include <Protocol/EsrtManagement.h>
+#include <Protocol/VariableLock.h>
 
 #include <Library/DebugLib.h>
 #include <Library/BaseMemoryLib.h>
@@ -38,7 +42,8 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/PrintLib.h>
 #include <Library/DxeServicesLib.h>
 #include <Library/BootLogoLib.h>
-
+#include <Library/HobLib.h>
+#include <Library/CapsuleLib.h>
 
 typedef struct {
   EFI_DEVICE_PATH_PROTOCOL  *DevicePath;

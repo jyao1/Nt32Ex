@@ -22,11 +22,16 @@ Abstract:
 #include <Uefi.h>
 #include <WinNtDxe.h>
 #include <Protocol/Reset.h>
+#include <Guid/WinNtMemoryLayout.h>
+#include <Library/BaseLib.h>
+#include <Library/PrintLib.h>
+#include <Library/HobLib.h>
 #include <Library/DebugLib.h>
 #include <Library/UefiDriverEntryPoint.h>
 #include <Library/WinNtLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 
+#define EFI_NT32_MEMORY_FILE_NAME  L"MemoryBin"
 
 EFI_STATUS
 EFIAPI
@@ -44,6 +49,7 @@ WinNtResetSystem (
   IN VOID             *ResetData OPTIONAL
   );
 
+EFI_WIN_NT_MEMORY_LAYOUT  *mWinNtMemoryLayout;
 
 EFI_STATUS
 EFIAPI
@@ -69,6 +75,7 @@ Returns:
 {
   EFI_STATUS  Status;
   EFI_HANDLE  Handle;
+  EFI_HOB_GUID_TYPE   *GuidHob;
 
   SystemTable->RuntimeServices->ResetSystem = WinNtResetSystem;
 
@@ -80,6 +87,16 @@ Returns:
                   NULL
                   );
   ASSERT_EFI_ERROR (Status);
+
+  if (FeaturePcdGet (PcdWinNtCapsuleEnable)) {
+    //
+    // Retrieve WinNtThunkProtocol from GUID'ed HOB
+    //
+    GuidHob = GetFirstGuidHob (&gEfiWinNtMemoryLayoutGuid);
+    ASSERT (GuidHob != NULL);
+    mWinNtMemoryLayout = GET_GUID_HOB_DATA (GuidHob);
+    ASSERT (mWinNtMemoryLayout != NULL);
+  }
 
   return Status;
 }
@@ -111,6 +128,73 @@ Returns:
 
 --*/
 {
+  UINTN   Index;
+  CHAR16  FileName[30];
+  CHAR16  *TempName;
+  HANDLE  NtFileHandle;
+  DWORD   BufferSize;
+  VOID    *Buffer;
+  BOOL    Result;
+  EFI_TPL  OldTpl;
+
+  if (FeaturePcdGet (PcdWinNtCapsuleEnable)) {
+    OldTpl = gBS->RaiseTPL (TPL_CALLBACK);
+
+    StrCpy (FileName, EFI_NT32_MEMORY_FILE_NAME);
+    TempName = FileName + StrLen (FileName);
+    for (Index = 0; Index < mWinNtMemoryLayout->NumberOfRegions; Index++) {
+      UnicodeValueToString (TempName, 0, Index, 0);
+
+      NtFileHandle = gWinNt->CreateFile (
+                               FileName,
+                               GENERIC_READ | GENERIC_WRITE,
+                               FILE_SHARE_READ | FILE_SHARE_WRITE,
+                               NULL,
+                               OPEN_ALWAYS,
+                               0,
+                               NULL
+                               );
+      if (NtFileHandle == INVALID_HANDLE_VALUE) {
+        DEBUG ((EFI_D_ERROR, "ResetSystem - open %s fail\n", FileName));
+        continue;
+      }
+
+      if (ResetType == EfiResetWarm) {
+        //
+        // WarmReset, save memory to file
+        //
+        Buffer     = (VOID *)(UINTN)mWinNtMemoryLayout->Descriptor[Index].Base;
+        BufferSize = (DWORD)mWinNtMemoryLayout->Descriptor[Index].Size;
+        Result = gWinNt->WriteFile (
+                           NtFileHandle,
+                           Buffer,
+                           BufferSize,
+                           &BufferSize,
+                           NULL
+                           );
+
+        gWinNt->CloseHandle (NtFileHandle);
+        if (!Result) {
+          DEBUG ((EFI_D_ERROR, "ResetSystem Warm - write %s fail!\n", FileName));
+        } else {
+          DEBUG ((EFI_D_ERROR, "ResetSystem Warm - write %s success!\n", FileName));
+        }
+      } else {
+        //
+        // CodeReset, delete file
+        //
+        gWinNt->CloseHandle (NtFileHandle);
+
+        Result = gWinNt->DeleteFile (FileName);
+        if (!Result) {
+          DEBUG ((EFI_D_ERROR, "ResetSystem Cold - delete %s fail!\n", FileName));
+        } else {
+          DEBUG ((EFI_D_ERROR, "ResetSystem Cold - delete %s success!\n", FileName));
+        }
+      }
+    }
+  }
+
   //
   // BUGBUG Need to kill all console windows later
   //

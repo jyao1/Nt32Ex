@@ -82,6 +82,7 @@ Returns:
   if (EFI_ERROR (Status)) {
     return Status;
   }
+  PcdSet64(PcdWinNtFdBaseAddressRuntime, FdBase);
 
   //
   // Relocate the base of FV region 
@@ -95,6 +96,9 @@ Returns:
     PcdSet32 (PcdFlashNvStorageFtwWorkingBase, PcdGet32 (PcdWinNtFlashNvStorageFtwWorkingBase) + (UINT32) FdBase);
     PcdSet32 (PcdFlashNvStorageFtwSpareBase, PcdGet32 (PcdWinNtFlashNvStorageFtwSpareBase) + (UINT32) FdBase);
   }
+
+  PcdSet64(PcdCpuMicrocodePatchAddress, PcdGet32(PcdWinNtMicrocodeFvBase) + (UINT64)FdBase + 0x60);
+  PcdSet64(PcdCpuMicrocodePatchRegionSize, PcdGet32(PcdWinNtMicrocodeFvSize) - 0x60);
 
   return EFI_SUCCESS;
 }

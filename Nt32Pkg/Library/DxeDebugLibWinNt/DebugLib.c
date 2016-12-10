@@ -28,6 +28,9 @@
 #include <Library/SerialPortLib.h>
 #include <Library/DebugPrintErrorLevelLib.h>
 #include <Library/HobLib.h>
+#include <Library/UefiLib.h>
+
+#include <Guid/HobList.h>
 
 #include <WinNtDxe.h>
 #include <Protocol/WinNtThunk.h>
@@ -64,7 +67,7 @@ DxeDebugLibWinNtConstructor (
   //
   // Retrieve WinNtThunkProtocol from GUID'ed HOB
   //
-  GuidHob = GetFirstGuidHob (&gEfiWinNtThunkProtocolGuid);
+  GuidHob = GetFirstGuidHob(&gEfiWinNtThunkProtocolGuid);
   ASSERT (GuidHob != NULL);
   mWinNt = (EFI_WIN_NT_THUNK_PROTOCOL *)(*(UINTN *)(GET_GUID_HOB_DATA (GuidHob)));
   ASSERT (mWinNt != NULL);

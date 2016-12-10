@@ -1,0 +1,52 @@
+## @file
+# Component description file for BootMode module
+#
+# This module provides platform specific function to detect boot mode.
+# Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
+#
+#  This program and the accompanying materials
+#  are licensed and made available under the terms and conditions of the BSD License
+#  which accompanies this distribution. The full text of the license may be found at
+#  http://opensource.org/licenses/bsd-license.php
+#  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = WinNtRecovery
+  FILE_GUID                      = 5A1D3CD8-9DF8-4d62-A135-EBB5C090949A
+  MODULE_TYPE                    = PEIM
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = WinNtRecoveryPeimEntry
+
+[Sources]
+  WinNtRecoveryPei.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  Nt32Pkg/Nt32Pkg.dec
+
+[LibraryClasses]
+  PeiServicesLib
+  PeimEntryPoint
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  PeiServicesTablePointerLib
+
+[Pcd]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdRecoveryFileName
+
+[Ppis]
+  gEfiPeiDeviceRecoveryModulePpiGuid                  # PPI ALWAYS_PRODUCED
+  gPeiNtRecoveryPpiGuid
+  gPeiNtThunkPpiGuid
+
+[Depex]
+  gPeiNtThunkPpiGuid
+  # BUGBUG: Need investigate later: why it can not be load after memory discovered?
+#  gEfiPeiMemoryDiscoveredPpiGuid AND gEfiPeiBootInRecoveryModePpiGuid

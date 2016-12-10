@@ -30,9 +30,11 @@ Revision History
 //
 #include <Ppi/NtAutoscan.h>
 #include <Ppi/ReadOnlyVariable2.h>
+#include <Ppi/Capsule.h>
 
 #include <Guid/MemoryTypeInformation.h>
 #include <Guid/SmramMemoryReserve.h>
+#include <Guid/WinNtMemoryLayout.h>
 
 //
 // The Library classes this module consumes
@@ -99,6 +101,48 @@ ValidateMemoryTypeInfoVariable (
   return TRUE;
 }
 
+UINTN
+CountSeperatorsInString (
+  IN  CONST CHAR16   *String,
+  IN  CHAR16         Seperator
+  )
+/*++
+
+Routine Description:
+  Count the number of seperators in String
+
+Arguments:
+  String    - String to process
+  Seperator - Item to count
+
+Returns:
+  Number of Seperator in String
+
+--*/
+{
+  UINTN Count;
+
+  for (Count = 0; *String != '\0'; String++) {
+    if (*String == Seperator) {
+      Count++;
+    }
+  }
+
+  return Count;
+}
+
+UINTN
+GetMaxSystemMemoryCount (
+  VOID
+  )
+{
+  UINTN  SystemMemoryCount;
+  
+  SystemMemoryCount = CountSeperatorsInString(PcdGetPtr(PcdWinNtMemorySizeForSecMain), '!') + 1;
+  return SystemMemoryCount;
+}
+
+
 EFI_STATUS
 EFIAPI
 PeimInitializeWinNtAutoScan (
@@ -119,20 +163,27 @@ Returns:
 
 --*/
 {
-  EFI_STATUS                  Status;
-  EFI_PEI_PPI_DESCRIPTOR      *PpiDescriptor;
-  PEI_NT_AUTOSCAN_PPI         *PeiNtService;
-  UINT64                      MemorySize;
-  EFI_PHYSICAL_ADDRESS        MemoryBase;
-  UINTN                       Index;
-  EFI_RESOURCE_ATTRIBUTE_TYPE Attributes;
+  EFI_STATUS                            Status;
+  EFI_PEI_PPI_DESCRIPTOR                *PpiDescriptor;
+  PEI_NT_AUTOSCAN_PPI                   *PeiNtService;
+  UINT64                                MemorySize;
+  EFI_PHYSICAL_ADDRESS                  MemoryBase;
+  UINTN                                 Index;
+  EFI_RESOURCE_ATTRIBUTE_TYPE           Attributes;
+  UINT64                                PeiMemorySize;
+  EFI_PHYSICAL_ADDRESS                  PeiMemoryBase;
   EFI_PEI_READ_ONLY_VARIABLE2_PPI       *Variable;
   UINTN                                 DataSize;
   EFI_MEMORY_TYPE_INFORMATION           MemoryData [EfiMaxMemoryType + 1];
   UINT64                                SmramMemorySize;
   EFI_PHYSICAL_ADDRESS                  SmramMemoryBase;
   EFI_SMRAM_HOB_DESCRIPTOR_BLOCK        *SmramHobDescriptorBlock;
-
+  PEI_CAPSULE_PPI                       *Capsule;
+  VOID                                  *CapsuleBuffer;
+  UINTN                                 CapsuleBufferLength;
+  EFI_BOOT_MODE                         BootMode;
+  EFI_WIN_NT_MEMORY_LAYOUT              *MemoryLayout;
+  UINTN                                 MaxSystemMemoryCount;
 
   DEBUG ((EFI_D_ERROR, "NT 32 Autoscan PEIM Loaded\n"));
 
@@ -147,6 +198,29 @@ Returns:
              );
   ASSERT_EFI_ERROR (Status);
 
+  Status = PeiServicesGetBootMode (&BootMode);
+  ASSERT_EFI_ERROR (Status);
+
+  DEBUG ((EFI_D_ERROR, "BootMode - %x\n", BootMode));
+
+  if (FeaturePcdGet (PcdWinNtCapsuleEnable)) {
+    MaxSystemMemoryCount = GetMaxSystemMemoryCount();
+    MemoryLayout = BuildGuidHob (
+                     &gEfiWinNtMemoryLayoutGuid,
+                     sizeof (EFI_WIN_NT_MEMORY_LAYOUT) + sizeof (EFI_WIN_NT_MEMORY_DESCRIPTOR) * (MaxSystemMemoryCount - 1)
+                     );
+    ASSERT (MemoryLayout != NULL);
+    MemoryLayout->NumberOfRegions = 0;
+  
+    Capsule = NULL;
+    CapsuleBuffer = NULL;
+    CapsuleBufferLength = 0;
+    if (BootMode == BOOT_ON_FLASH_UPDATE) {
+      Status = PeiServicesLocatePpi (&gPeiCapsulePpiGuid, 0, NULL, (VOID**) &Capsule);
+      ASSERT_EFI_ERROR (Status);
+    }
+  }
+
   Index = 0;
   SmramMemorySize = 0;
   SmramMemoryBase = 0;
@@ -156,6 +230,14 @@ Returns:
     if (!EFI_ERROR (Status)) {
       DEBUG ((EFI_D_ERROR, "NtAutoScan(%d) Base - 0x%lx\n", Index, MemoryBase));
       DEBUG ((EFI_D_ERROR, "NtAutoScan(%d) Size - 0x%lx\n", Index, MemorySize));
+
+      if (FeaturePcdGet (PcdWinNtCapsuleEnable)) {
+        if (MemoryLayout->NumberOfRegions < MaxSystemMemoryCount) {
+          MemoryLayout->Descriptor[MemoryLayout->NumberOfRegions].Base = MemoryBase;
+          MemoryLayout->Descriptor[MemoryLayout->NumberOfRegions].Size = MemorySize;
+          MemoryLayout->NumberOfRegions ++;
+        }
+      }
 
       Attributes =
         (
@@ -184,8 +266,19 @@ Returns:
           MemorySize      = MemorySize - SmramMemorySize;
         }
 
-        Status = PeiServicesInstallPeiMemory (MemoryBase, MemorySize);
-        ASSERT_EFI_ERROR (Status);
+        PeiMemoryBase = MemoryBase;
+        PeiMemorySize = MemorySize;
+
+        if (FeaturePcdGet(PcdWinNtCapsuleEnable)) {
+          //
+          // Capsule
+          //
+          if (Capsule != NULL) {
+            CapsuleBufferLength = ((UINTN) PeiMemorySize / 2);
+            PeiMemorySize       = CapsuleBufferLength;
+            CapsuleBuffer = (VOID*) (UINTN) (PeiMemoryBase + CapsuleBufferLength);
+          }
+        }
 
         Attributes |= EFI_RESOURCE_ATTRIBUTE_TESTED;
       }
@@ -196,9 +289,47 @@ Returns:
         MemoryBase,
         MemorySize
         );
+      DEBUG ((EFI_D_ERROR, "ResourceHob - 0x%lx - 0x%lx\n", MemoryBase, MemorySize));
     }
     Index++;
   } while (!EFI_ERROR (Status));
+
+  if (FeaturePcdGet(PcdWinNtCapsuleEnable)) {
+    if (Capsule != NULL) {
+      //
+      // Call the Capsule PPI Coalesce function to coalesce the capsule data.
+      //
+      Status = Capsule->Coalesce (
+                          (EFI_PEI_SERVICES**) PeiServices,
+                          &CapsuleBuffer,
+                          &CapsuleBufferLength
+                          );
+      DEBUG ((EFI_D_ERROR, "CoalesceStatus - %r\n", Status));
+      DEBUG ((EFI_D_ERROR, "CapsuleBuffer - %x\n", CapsuleBuffer));
+      DEBUG ((EFI_D_ERROR, "CapsuleBufferLength - %x\n", CapsuleBufferLength));
+      
+      //
+      // If it failed, then NULL out our capsule PPI pointer so that the capsule
+      // HOB does not get created below.
+      //
+      if (Status != EFI_SUCCESS) {
+        Capsule = NULL;
+      }
+    }
+  }
+
+  Status = PeiServicesInstallPeiMemory (PeiMemoryBase, PeiMemorySize);
+  ASSERT_EFI_ERROR (Status);
+
+  if (FeaturePcdGet(PcdWinNtCapsuleEnable)) {
+    //
+    // If we found the capsule PPI (and we didn't have errors), then
+    // call the capsule PEIM to allocate memory for the capsule.
+    //
+    if (Capsule != NULL) {
+      Status = Capsule->CreateState((EFI_PEI_SERVICES **)PeiServices, CapsuleBuffer, CapsuleBufferLength);
+    }
+  }
 
   //
   // Build the CPU hob with 52-bit addressing and 16-bits of IO space.

@@ -28,10 +28,10 @@
 ################################################################################
 [FD.Nt32]
 BaseAddress   = 0x0|gEfiNt32PkgTokenSpaceGuid.PcdWinNtFdBaseAddress          #The base address of the FLASH Device.
-Size          = 0x005a0000|gEfiNt32PkgTokenSpaceGuid.PcdWinNtFirmwareFdSize  #The size in bytes of the FLASH Device
+Size          = 0x00780000|gEfiNt32PkgTokenSpaceGuid.PcdWinNtFirmwareFdSize  #The size in bytes of the FLASH Device
 ErasePolarity = 1
-BlockSize     = 0x10000
-NumBlocks     = 0x5a
+BlockSize     = 0x1000
+NumBlocks     = 0x780
 
 ################################################################################
 #
@@ -48,11 +48,15 @@ NumBlocks     = 0x5a
 # RegionType <FV, DATA, or FILE>
 #
 ################################################################################
-0x00000000|0x00580000
+0x00000000|0x00200000
 gEfiNt32PkgTokenSpaceGuid.PcdWinNtFlashFvRecoveryBase|gEfiNt32PkgTokenSpaceGuid.PcdWinNtFlashFvRecoverySize
 FV = FvRecovery
 
-0x00580000|0x0000c000
+0x00200000|0x00480000
+gEfiNt32PkgTokenSpaceGuid.PcdWinNtFlashFvMainBase|gEfiNt32PkgTokenSpaceGuid.PcdWinNtFlashFvMainSize
+FV = FvMain
+
+0x00680000|0x0000c000
 gEfiNt32PkgTokenSpaceGuid.PcdWinNtFlashNvStorageVariableBase|gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageVariableSize
 #NV_VARIABLE_STORE
 DATA = {
@@ -93,11 +97,11 @@ DATA = {
   0x5A, 0xFE, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 }
 
-0x0058c000|0x00002000
+0x0068c000|0x00002000
 #NV_EVENT_LOG
 gEfiNt32PkgTokenSpaceGuid.PcdWinNtFlashNvStorageEventLogBase|gEfiNt32PkgTokenSpaceGuid.PcdWinNtFlashNvStorageEventLogSize
 
-0x0058e000|0x00002000
+0x0068e000|0x00002000
 gEfiNt32PkgTokenSpaceGuid.PcdWinNtFlashNvStorageFtwWorkingBase|gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwWorkingSize
 #NV_FTW_WORKING
 DATA = {
@@ -111,9 +115,21 @@ DATA = {
   0xE0, 0x1F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 }
 
-0x00590000|0x00010000
+0x00690000|0x00010000
 #NV_FTW_SPARE
 gEfiNt32PkgTokenSpaceGuid.PcdWinNtFlashNvStorageFtwSpareBase|gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwSpareSize
+
+0x006A0000|0x00060000
+gEfiNt32PkgTokenSpaceGuid.PcdWinNtMicrocodeFvBase|gEfiNt32PkgTokenSpaceGuid.PcdWinNtMicrocodeFvSize
+!if $(MICROCODE_UPDATE_ENABLE)
+FV = MICROCODE_FV
+!endif
+
+0x00700000|0x00020000
+
+0x00720000|0x00030000
+
+0x00750000|0x00030000
 
 ################################################################################
 #
@@ -167,6 +183,65 @@ APRIORI PEI {
   INF  MdeModulePkg/Universal/StatusCodeHandler/Pei/StatusCodeHandlerPei.inf
   INF  Nt32Pkg/WinNtOemHookStatusCodeHandlerPei/WinNtOemHookStatusCodeHandlerPei.inf
   }
+
+!if $(CAPSULE_ENABLE) || $(RECOVERY_ENABLE)
+INF RuleOverride = FMP_IMAGE_DESC Nt32Pkg/Feature/Capsule/SystemFirmwareDescriptor/SystemFirmwareDescriptor.inf
+!endif
+
+INF  MdeModulePkg/Core/Pei/PeiMain.inf
+INF  MdeModulePkg/Universal/PCD/Pei/Pcd.inf
+INF  MdeModulePkg/Universal/ReportStatusCodeRouter/Pei/ReportStatusCodeRouterPei.inf
+INF  MdeModulePkg/Universal/StatusCodeHandler/Pei/StatusCodeHandlerPei.inf
+INF  Nt32Pkg/WinNtOemHookStatusCodeHandlerPei/WinNtOemHookStatusCodeHandlerPei.inf
+
+INF  Nt32Pkg/WinNtFlashMapPei/WinNtFlashMapPei.inf
+INF  MdeModulePkg/Universal/FaultTolerantWritePei/FaultTolerantWritePei.inf
+INF  MdeModulePkg/Universal/Variable/Pei/VariablePei.inf
+
+!if $(CAPSULE_ENABLE)
+INF  MdeModulePkg/Universal/CapsulePei/CapsulePei.inf
+!endif
+INF  Nt32Pkg/BootModePei/BootModePei.inf
+
+!if $(RECOVERY_ENABLE)
+INF  FatPkg/FatPei/FatPei.inf
+INF  MdeModulePkg/Universal/Disk/CdExpressPei/CdExpressPei.inf
+INF  Nt32Pkg/Feature/Recovery/WinNtRecoveryPei/WinNtRecoveryPei.inf
+INF  Nt32Pkg/Feature/Recovery/WinNtRecoveryRamFsPei/WinNtRecoveryRamFsPei.inf
+INF  SignedCapsulePkg/Universal/RecoveryModuleLoadPei/RecoveryModuleLoadPei.inf
+!endif
+
+INF  Nt32Pkg/StallPei/StallPei.inf
+INF  Nt32Pkg/WinNtAutoScanPei/WinNtAutoScanPei.inf
+INF  Nt32Pkg/WinNtFirmwareVolumePei/WinNtFirmwareVolumePei.inf
+
+INF  Nt32Pkg/WinNtThunkPPIToProtocolPei/WinNtThunkPPIToProtocolPei.inf
+INF  MdeModulePkg/Core/DxeIplPeim/DxeIpl.inf
+
+INF  Nt32Pkg/ResetPei/ResetPei.inf
+
+[FV.FvMain]
+FvAlignment        = 16         #FV alignment and FV attributes setting.
+ERASE_POLARITY     = 1
+MEMORY_MAPPED      = TRUE
+STICKY_WRITE       = TRUE
+LOCK_CAP           = TRUE
+LOCK_STATUS        = TRUE
+WRITE_DISABLED_CAP = TRUE
+WRITE_ENABLED_CAP  = TRUE
+WRITE_STATUS       = TRUE
+WRITE_LOCK_CAP     = TRUE
+WRITE_LOCK_STATUS  = TRUE
+READ_DISABLED_CAP  = TRUE
+READ_ENABLED_CAP   = TRUE
+READ_STATUS        = TRUE
+READ_LOCK_CAP      = TRUE
+READ_LOCK_STATUS   = TRUE
+FvNameGuid         = E0ABE1A5-961D-44C8-BD68-C6B8CFE9692A
+
+  ##
+  #  DXE Phase modules
+  ##
 APRIORI DXE {
   INF  MdeModulePkg/Universal/DevicePathDxe/DevicePathDxe.inf
   INF  MdeModulePkg/Universal/PCD/Dxe/Pcd.inf
@@ -176,26 +251,6 @@ APRIORI DXE {
   INF  Nt32Pkg/MetronomeDxe/MetronomeDxe.inf
   }
 
-INF  MdeModulePkg/Core/Pei/PeiMain.inf
-INF  MdeModulePkg/Universal/PCD/Pei/Pcd.inf
-INF  MdeModulePkg/Universal/ReportStatusCodeRouter/Pei/ReportStatusCodeRouterPei.inf
-INF  MdeModulePkg/Universal/StatusCodeHandler/Pei/StatusCodeHandlerPei.inf
-INF  Nt32Pkg/WinNtOemHookStatusCodeHandlerPei/WinNtOemHookStatusCodeHandlerPei.inf
-INF  Nt32Pkg/BootModePei/BootModePei.inf
-INF  Nt32Pkg/StallPei/StallPei.inf
-INF  Nt32Pkg/WinNtFlashMapPei/WinNtFlashMapPei.inf
-INF  Nt32Pkg/WinNtAutoScanPei/WinNtAutoScanPei.inf
-INF  Nt32Pkg/WinNtFirmwareVolumePei/WinNtFirmwareVolumePei.inf
-
-INF  MdeModulePkg/Universal/FaultTolerantWritePei/FaultTolerantWritePei.inf
-INF  MdeModulePkg/Universal/Variable/Pei/VariablePei.inf
-
-INF  Nt32Pkg/WinNtThunkPPIToProtocolPei/WinNtThunkPPIToProtocolPei.inf
-INF  MdeModulePkg/Core/DxeIplPeim/DxeIpl.inf
-
-  ##
-  #  DXE Phase modules
-  ##
 INF  MdeModulePkg/Core/Dxe/DxeMain.inf
 INF  MdeModulePkg/Universal/PCD/Dxe/Pcd.inf
 INF  Nt32Pkg/MetronomeDxe/MetronomeDxe.inf
@@ -219,6 +274,7 @@ INF  MdeModulePkg/Application/UiApp/UiApp.inf
 INF  MdeModulePkg/Universal/DriverHealthManagerDxe/DriverHealthManagerDxe.inf
 !if $(SMM_ENABLE)
 INF  MdeModulePkg/Universal/FaultTolerantWriteDxe/FaultTolerantWriteSmm.inf
+INF  MdeModulePkg/Universal/FaultTolerantWriteDxe/FaultTolerantWriteSmmDxe.inf
 !else
 INF  MdeModulePkg/Universal/FaultTolerantWriteDxe/FaultTolerantWriteDxe.inf
 !endif
@@ -263,6 +319,15 @@ INF  MdeModulePkg/Universal/PlatformDriOverrideDxe/PlatformDriOverrideDxe.inf
 INF  MdeModulePkg/Universal/DriverSampleDxe/DriverSampleDxe.inf
 INF  MdeModulePkg/Universal/Acpi/AcpiTableDxe/AcpiTableDxe.inf
 
+!if $(CAPSULE_ENABLE)
+INF  MdeModulePkg/Universal/EsrtDxe/EsrtDxe.inf
+INF  SignedCapsulePkg/Universal/SystemFirmwareUpdate/SystemFirmwareReportDxe.inf
+!endif
+
+!if $(MICROCODE_UPDATE_ENABLE)
+INF  Nt32Pkg/Feature/Microcode/MicrocodeUpdateDxe/MicrocodeUpdateDxe.inf
+!endif
+
 !if $(SMM_ENABLE)
 INF  Nt32Pkg/Feature/Smm/WinNtSmmAccessDxe/SmmAccessDxe.inf
 INF  Nt32Pkg/Feature/Smm/WinNtSmmControlDxe/SmmControlDxe.inf
@@ -296,6 +361,8 @@ INF  NetworkPkg/DnsDxe/DnsDxe.inf
 INF  NetworkPkg/HttpDxe/HttpDxe.inf
 INF  NetworkPkg/HttpUtilitiesDxe/HttpUtilitiesDxe.inf
 !endif
+
+INF  MdeModulePkg/Application/BootManagerMenuApp/BootManagerMenuApp.inf
 ################################################################################
 #
 # FILE statements are provided so that a platform integrator can include
@@ -316,10 +383,173 @@ INF  EdkShellBinPkg/FullShell/FullShell.inf
 
 INF FatPkg/EnhancedFatDxe/Fat.inf
 
-FILE FREEFORM = PCD(gEfiIntelFrameworkModulePkgTokenSpaceGuid.PcdLogoFile) {
-    SECTION RAW = MdeModulePkg/Logo/Logo.bmp
+INF MdeModulePkg/Logo/LogoDxe.inf
+INF MdeModulePkg/Universal/LoadFileOnFv2/LoadFileOnFv2.inf
+
+!if $(CAPSULE_ENABLE) || $(RECOVERY_ENABLE)
+
+[FV.CapsuleDispatchFv]
+BlockSize          = 0x1000
+FvAlignment        = 16
+ERASE_POLARITY     = 1
+MEMORY_MAPPED      = TRUE
+STICKY_WRITE       = TRUE
+LOCK_CAP           = TRUE
+LOCK_STATUS        = TRUE
+WRITE_DISABLED_CAP = TRUE
+WRITE_ENABLED_CAP  = TRUE
+WRITE_STATUS       = TRUE
+WRITE_LOCK_CAP     = TRUE
+WRITE_LOCK_STATUS  = TRUE
+READ_DISABLED_CAP  = TRUE
+READ_ENABLED_CAP   = TRUE
+READ_STATUS        = TRUE
+READ_LOCK_CAP      = TRUE
+READ_LOCK_STATUS   = TRUE
+
+INF  SignedCapsulePkg/Universal/SystemFirmwareUpdate/SystemFirmwareUpdateDxe.inf
+
+[FV.SystemFirmwareUpdateCargo]
+BlockSize          = 0x1000
+FvAlignment        = 16
+ERASE_POLARITY     = 1
+MEMORY_MAPPED      = TRUE
+STICKY_WRITE       = TRUE
+LOCK_CAP           = TRUE
+LOCK_STATUS        = TRUE
+WRITE_DISABLED_CAP = TRUE
+WRITE_ENABLED_CAP  = TRUE
+WRITE_STATUS       = TRUE
+WRITE_LOCK_CAP     = TRUE
+WRITE_LOCK_STATUS  = TRUE
+READ_DISABLED_CAP  = TRUE
+READ_ENABLED_CAP   = TRUE
+READ_STATUS        = TRUE
+READ_LOCK_CAP      = TRUE
+READ_LOCK_STATUS   = TRUE
+
+FILE RAW = AF9C9EB2-12AD-4D3E-A4D4-96F6C9966215 { # PcdEdkiiSystemFirmwareFileGuid
+    FD = NT32
+  }
+  
+FILE RAW = ce57b167-b0e4-41e8-a897-5f4feb781d40 { # gEdkiiSystemFmpCapsuleDriverFvFileGuid
+    FV = CapsuleDispatchFv
   }
 
+FILE RAW = 812136D3-4D3A-433A-9418-29BB9BF78F6E { # gEdkiiSystemFmpCapsuleConfigFileGuid
+    Nt32Pkg/Feature/Capsule/SystemFirmwareUpdateConfig/SystemFirmwareUpdateConfig.ini
+  }
+
+!endif
+
+!if $(CAPSULE_ENABLE)
+[FmpPayload.FmpPayloadSystemFirmwarePkcs7]
+IMAGE_HEADER_INIT_VERSION = 0x02
+IMAGE_TYPE_ID             = 3F7EEED3-F491-401E-9ECE-7431322EADF6 # PcdSystemFmpCapsuleImageTypeIdGuid
+IMAGE_INDEX               = 0x1
+HARDWARE_INSTANCE         = 0x0
+MONOTONIC_COUNT           = 0x2
+CERTIFICATE_GUID          = 4AAFD29D-68DF-49EE-8AA9-347D375665A7 # PKCS7
+
+FV = SystemFirmwareUpdateCargo
+
+[Capsule.Nt32FirmwareUpdateCapsuleFmpPkcs7]
+CAPSULE_GUID                = 6dcbd5ed-e82d-4c44-bda1-7194199ad92a # gEfiFmpCapsuleGuid
+CAPSULE_FLAGS               = PersistAcrossReset,InitiateReset
+CAPSULE_HEADER_SIZE         = 0x20
+CAPSULE_HEADER_INIT_VERSION = 0x1
+
+FMP_PAYLOAD = FmpPayloadSystemFirmwarePkcs7
+!endif
+
+!if $(RECOVERY_ENABLE)
+[FmpPayload.FmpPayloadSystemFirmwareRsa2048]
+IMAGE_HEADER_INIT_VERSION = 0x02
+IMAGE_TYPE_ID             = 3F7EEED3-F491-401E-9ECE-7431322EADF6 # PcdSystemFmpCapsuleImageTypeIdGuid
+IMAGE_INDEX               = 0x1
+HARDWARE_INSTANCE         = 0x0
+MONOTONIC_COUNT           = 0x2
+CERTIFICATE_GUID          = A7717414-C616-4977-9420-844712A735BF # RSA2048SHA256
+
+FV = SystemFirmwareUpdateCargo
+
+[Capsule.Nt32Rec]
+CAPSULE_GUID                = 6dcbd5ed-e82d-4c44-bda1-7194199ad92a # gEfiFmpCapsuleGuid
+CAPSULE_FLAGS               = PersistAcrossReset,InitiateReset
+CAPSULE_HEADER_SIZE         = 0x20
+CAPSULE_HEADER_INIT_VERSION = 0x1
+
+FMP_PAYLOAD = FmpPayloadSystemFirmwareRsa2048
+!endif
+
+!if $(MICROCODE_UPDATE_ENABLE)
+################################################################################
+#
+# FV Section
+#
+# [FV] section is used to define what components or modules are placed within a flash
+# device file.  This section also defines order the components and modules are positioned
+# within the image.  The [FV] section consists of define statements, set statements and
+# module statements.
+#
+################################################################################
+[FV.MICROCODE_FV]
+FvAlignment        = 16
+ERASE_POLARITY     = 1
+MEMORY_MAPPED      = TRUE
+STICKY_WRITE       = TRUE
+LOCK_CAP           = TRUE
+LOCK_STATUS        = FALSE
+WRITE_DISABLED_CAP = TRUE
+WRITE_ENABLED_CAP  = TRUE
+WRITE_STATUS       = TRUE
+WRITE_LOCK_CAP     = TRUE
+WRITE_LOCK_STATUS  = TRUE
+READ_DISABLED_CAP  = TRUE
+READ_ENABLED_CAP   = TRUE
+READ_STATUS        = TRUE
+READ_LOCK_CAP      = TRUE
+READ_LOCK_STATUS   = TRUE
+
+FILE RAW = 197DB236-F856-4924-90F8-CDF12FB875F3 {
+  $(OUTPUT_DIRECTORY)\$(TARGET)_$(TOOL_CHAIN_TAG)\$(ARCH)\MicrocodeUpdates.bin
+}
+
+[FmpPayload.FmpPayloadMicrocode1]
+IMAGE_HEADER_INIT_VERSION = 0x02
+IMAGE_TYPE_ID             = 96d4fdcd-1502-424d-9d4c-9b12d2dcae5c # gMicrocodeFmpImageTypeIdGuid
+IMAGE_INDEX               = 0x1
+HARDWARE_INSTANCE         = 0x0
+
+FILE DATA = Nt32Pkg/Feature/Microcode/MicrocodeDummy/M023067221D.mcb
+
+[FmpPayload.FmpPayloadMicrocode2]
+IMAGE_HEADER_INIT_VERSION = 0x02
+IMAGE_TYPE_ID             = 96d4fdcd-1502-424d-9d4c-9b12d2dcae5c # gMicrocodeFmpImageTypeIdGuid
+IMAGE_INDEX               = 0x2
+HARDWARE_INSTANCE         = 0x0
+
+FILE DATA = Nt32Pkg/Feature/Microcode/MicrocodeDummy/M0130673321.mcb
+
+[FmpPayload.FmpPayloadMicrocode3]
+IMAGE_HEADER_INIT_VERSION = 0x02
+IMAGE_TYPE_ID             = 96d4fdcd-1502-424d-9d4c-9b12d2dcae5c # gMicrocodeFmpImageTypeIdGuid
+IMAGE_INDEX               = 0x3
+HARDWARE_INSTANCE         = 0x0
+
+FILE DATA = Nt32Pkg/Feature/Microcode/MicrocodeDummy/M0130678806.mcb
+
+[Capsule.MicrocodeCapsule]
+CAPSULE_GUID                = 6dcbd5ed-e82d-4c44-bda1-7194199ad92a # gEfiFmpCapsuleGuid
+CAPSULE_FLAGS               = PersistAcrossReset,InitiateReset
+CAPSULE_HEADER_SIZE         = 0x20
+CAPSULE_HEADER_INIT_VERSION = 0x1
+
+FMP_PAYLOAD = FmpPayloadMicrocode1
+FMP_PAYLOAD = FmpPayloadMicrocode2
+FMP_PAYLOAD = FmpPayloadMicrocode3
+
+!endif
 
 ################################################################################
 #
@@ -488,3 +718,13 @@ FILE FREEFORM = PCD(gEfiIntelFrameworkModulePkgTokenSpaceGuid.PcdLogoFile) {
       }
     }
   }
+  
+[Rule.Common.PEIM.FMP_IMAGE_DESC]
+  FILE PEIM = $(NAMED_GUID) {
+     RAW BIN                  |.acpi
+     PEI_DEPEX PEI_DEPEX Optional        $(INF_OUTPUT)/$(MODULE_NAME).depex
+     PE32      PE32    Align=4K          $(INF_OUTPUT)/$(MODULE_NAME).efi
+     UI       STRING="$(MODULE_NAME)" Optional         
+     VERSION  STRING="$(INF_VERSION)" Optional BUILD_NUM=$(BUILD_NUMBER)   
+  }
+

@@ -30,12 +30,18 @@ Abstract:
 //
 #include <Ppi/MasterBootMode.h>
 #include <Ppi/BootInRecoveryMode.h>
+#include <Ppi/Capsule.h>
+#include <Ppi/NtRecovery.h>
+
 //
 // The Library classes this module consumes
 //
 #include <Library/DebugLib.h>
 #include <Library/PeimEntryPoint.h>
-
+#include <Library/PeiServicesLib.h>
+#include <Library/HobLib.h>
+#include <Library/MemoryAllocationLib.h>
+#include <Library/PcdLib.h>
 
 //
 // Module globals
@@ -51,6 +57,69 @@ EFI_PEI_PPI_DESCRIPTOR  mPpiListRecoveryBootMode = {
   &gEfiPeiBootInRecoveryModePpiGuid,
   NULL
 };
+
+/**
+  Determine if we're in capsule update boot mode.
+  It's done by calling Capsule PPI.
+
+  @param  PeiServices General purpose services available to every PEIM.
+
+  @retval TRUE  If it's Capsule boot path.
+
+  @retval FALSE If it's not Capsule boot path.
+**/
+BOOLEAN
+CheckUpdateCapsule (
+  IN CONST EFI_PEI_SERVICES     **PeiServices
+  )
+{
+  EFI_STATUS              Status;
+  PEI_CAPSULE_PPI         *Capsule;
+
+  Status = (**PeiServices).LocatePpi (
+             PeiServices,
+             &gPeiCapsulePpiGuid,
+             0,
+             NULL,
+             (VOID **) &Capsule
+             );
+  if (!EFI_ERROR(Status)) {
+    Status = Capsule->CheckCapsuleUpdate ((EFI_PEI_SERVICES **) PeiServices);
+    if (!EFI_ERROR(Status)) {
+      return TRUE;
+    }
+  }
+
+  return FALSE;
+}
+
+BOOLEAN
+CheckRecovery (
+  IN CONST EFI_PEI_SERVICES     **PeiServices
+  )
+{
+  EFI_STATUS              Status;
+  PEI_NT_RECOVERY_PPI     *NtRecovery;
+  BOOLEAN                 IsRecovery;
+
+  Status = (**PeiServices).LocatePpi (
+             PeiServices,
+             &gPeiNtRecoveryPpiGuid,
+             0,
+             NULL,
+             (VOID **) &NtRecovery
+             );
+  if (EFI_ERROR(Status)) {
+    return FALSE;
+  }
+
+  Status = NtRecovery->IsRecoveryMode (&IsRecovery);
+  if (EFI_ERROR(Status)) {
+    return FALSE;
+  }
+
+  return IsRecovery;
+}
 
 EFI_STATUS
 EFIAPI
@@ -85,7 +154,18 @@ Returns:
   // Should we read an environment variable in order to easily change this?
   //
   BootMode  = BOOT_WITH_FULL_CONFIGURATION;
+  if (FeaturePcdGet (PcdWinNtCapsuleEnable)) {
+    if (CheckUpdateCapsule (PeiServices)) {
+      BootMode = BOOT_ON_FLASH_UPDATE;
+    }
+  }
+  if (FeaturePcdGet (PcdWinNtRecoveryEnable)) {
+    if (CheckRecovery (PeiServices)) {
+      BootMode = BOOT_IN_RECOVERY_MODE;
+    }
+  }
 
+  DEBUG ((EFI_D_ERROR, "NT32 Boot Mode - %x\n", BootMode));
   Status    = (**PeiServices).SetBootMode (PeiServices, (UINT8) BootMode);
   ASSERT_EFI_ERROR (Status);
 

@@ -35,7 +35,7 @@
 
 [Packages]
   MdePkg/MdePkg.dec
-
+  Nt32Pkg/Nt32Pkg.dec
 
 [LibraryClasses]
   PeimEntryPoint
@@ -45,6 +45,12 @@
 [Ppis]
   gEfiPeiMasterBootModePpiGuid                  # PPI ALWAYS_PRODUCED
   gEfiPeiBootInRecoveryModePpiGuid              # PPI SOMETIMES_PRODUCED
+  gPeiCapsulePpiGuid
+  gPeiNtRecoveryPpiGuid
+
+[FeaturePcd]
+  gEfiNt32PkgTokenSpaceGuid.PcdWinNtCapsuleEnable
+  gEfiNt32PkgTokenSpaceGuid.PcdWinNtRecoveryEnable
 
 [depex]
   TRUE

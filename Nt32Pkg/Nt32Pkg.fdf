@@ -220,6 +220,10 @@ INF  MdeModulePkg/Core/DxeIplPeim/DxeIpl.inf
 
 INF  Nt32Pkg/ResetPei/ResetPei.inf
 
+!if $(TPM2_ENABLE)
+INF  SecurityPkg/Tcg/Tcg2Pei/Tcg2Pei.inf
+!endif
+
 [FV.FvMain]
 FvAlignment        = 16         #FV alignment and FV attributes setting.
 ERASE_POLARITY     = 1
@@ -318,6 +322,11 @@ INF  Nt32Pkg/WinNtSimpleFileSystemDxe/WinNtSimpleFileSystemDxe.inf
 INF  MdeModulePkg/Universal/PlatformDriOverrideDxe/PlatformDriOverrideDxe.inf
 INF  MdeModulePkg/Universal/DriverSampleDxe/DriverSampleDxe.inf
 INF  MdeModulePkg/Universal/Acpi/AcpiTableDxe/AcpiTableDxe.inf
+
+!if $(TPM2_ENABLE)
+INF  SecurityPkg/Tcg/Tcg2Dxe/Tcg2Dxe.inf
+INF  Nt32Pkg/Feature/Tpm2/Tcg2Config/Tcg2ConfigDxe.inf
+!endif
 
 !if $(CAPSULE_ENABLE)
 INF  MdeModulePkg/Universal/EsrtDxe/EsrtDxe.inf

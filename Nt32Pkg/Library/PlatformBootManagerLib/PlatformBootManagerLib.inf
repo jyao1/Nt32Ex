@@ -39,6 +39,7 @@
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
   IntelFrameworkModulePkg/IntelFrameworkModulePkg.dec
+  SecurityPkg/SecurityPkg.dec
   Nt32Pkg/Nt32Pkg.dec
 
 [LibraryClasses]
@@ -56,6 +57,7 @@
   BootLogoLib
   HobLib
   CapsuleLib
+  Tcg2PhysicalPresenceLib
 
 [Guids]
   gEfiWinNtSystemConfigGuid
@@ -84,4 +86,5 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdSupportUpdateCapsuleReset
   gEfiNt32PkgTokenSpaceGuid.PcdWinNtCapsuleEnable
   gEfiNt32PkgTokenSpaceGuid.PcdWinNtRecoveryEnable
+  gEfiNt32PkgTokenSpaceGuid.PcdWinNtTpm2Enable
 

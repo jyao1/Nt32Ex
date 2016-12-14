@@ -139,6 +139,29 @@ Returns:
 --*/
 ;
 
+VOID *
+EFIAPI
+SecWinNtWinNtSocketThunkAddress (
+  VOID
+  )
+/*++
+
+Routine Description:
+
+  TODO: Add function description
+
+Arguments:
+
+  InterfaceSize - TODO: add argument description
+  InterfaceBase - TODO: add argument description
+
+Returns:
+
+  TODO: add return values
+
+--*/
+;
+
 EFI_STATUS
 EFIAPI
 SecWinNtWinNtFwhAddress (
@@ -576,3 +599,4 @@ SecGetPeiServicesTablePointer(
   );
 
 extern EFI_WIN_NT_THUNK_PROTOCOL  *gWinNt;
+extern EFI_WIN_NT_SOCKET_THUNK_PROTOCOL  *gWinNtSocket;

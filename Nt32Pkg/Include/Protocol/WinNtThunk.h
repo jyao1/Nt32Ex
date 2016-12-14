@@ -1290,4 +1290,115 @@ typedef struct {
 
 extern EFI_GUID gEfiWinNtThunkProtocolGuid;
 
+
+#define EFI_WIN_NT_SOCKET_THUNK_PROTOCOL_GUID \
+  { 0x7418693c, 0x47b7, 0x4abf, { 0xa9, 0x6f, 0xd0, 0xca, 0x25, 0x96, 0x4, 0x98 } }
+
+typedef
+INT32
+(WSAAPI *WinNtWSAStartup) (
+    IN  WORD wVersionRequested,
+    OUT LPWSADATA lpWSAData
+    );
+
+typedef
+INT32
+(WSAAPI *WinNtWSACleanup) (
+    VOID
+    );
+
+typedef
+INT32
+(WSAAPI *WinNtWSAGetLastError) (
+    VOID
+    );
+
+typedef
+SOCKET
+(WSAAPI *WinNtsocket) (
+  IN INT32 af,
+  IN INT32 type,
+  IN INT32 protocol
+  );
+
+typedef
+INT32
+(WSAAPI *WinNtbind) (
+  IN SOCKET s,
+  IN CONST struct sockaddr *addr,
+  IN INT32 namelen
+  );
+
+typedef
+INT32
+(WSAAPI *WinNtlisten) (
+  IN SOCKET s,
+  IN INT32 backlog
+  );
+
+typedef
+SOCKET
+(WSAAPI *WinNtaccept) (
+  IN SOCKET s,
+  OUT struct sockaddr *addr,
+  IN OUT INT32 *addrlen
+  );
+
+typedef
+INT32
+(WSAAPI *WinNtconnect) (
+  IN SOCKET s,
+  IN CONST struct sockaddr *name,
+  IN INT32 namelen
+  );
+
+typedef
+INT32
+(WSAAPI *WinNtsend) (
+  IN SOCKET s,
+  IN CONST UINT8 * buf,
+  IN INT32 len,
+  IN INT32 flags
+  );
+
+typedef
+INT32
+(WSAAPI *WinNtrecv) (
+  IN SOCKET s,
+  OUT UINT8 * buf,
+  IN INT32 len,
+  IN INT32 flags
+  );
+
+typedef
+INT32
+(WSAAPI *WinNtclosesocket) (
+  IN SOCKET s
+  );
+
+#define EFI_WIN_NT_SOCKET_THUNK_PROTOCOL_SIGNATURE SIGNATURE_32 ('N', 'T', 'S', 'T')
+
+typedef struct {
+  UINT64                              Signature;
+
+  //
+  // Win32 Socket APIs
+  //
+  WinNtWSAStartup                     WSAStartup;
+  WinNtWSACleanup                     WSACleanup;
+  WinNtWSAGetLastError                WSAGetLastError;
+  
+  WinNtsocket                         socket;
+  WinNtbind                           bind;
+  WinNtlisten                         listen;
+  WinNtaccept                         accept;
+  WinNtconnect                        connect;
+  WinNtsend                           send;
+  WinNtrecv                           recv;
+  WinNtclosesocket                    closesocket;
+  
+} EFI_WIN_NT_SOCKET_THUNK_PROTOCOL;
+
+extern EFI_GUID gEfiWinNtSocketThunkProtocolGuid;
+
 #endif

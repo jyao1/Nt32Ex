@@ -181,7 +181,23 @@ EFI_WIN_NT_THUNK_PROTOCOL mWinNtThunkTable = {
   QueryPerformanceFrequency
 };
 
+EFI_WIN_NT_SOCKET_THUNK_PROTOCOL mWinNtSocketThunkTable = {
+  EFI_WIN_NT_SOCKET_THUNK_PROTOCOL_SIGNATURE,
+  WSAStartup,
+  WSACleanup,
+  WSAGetLastError,
+  socket,
+  bind,
+  listen,
+  accept,
+  connect,
+  send,
+  recv,
+  closesocket,
+};
+
 #pragma warning(default : 4996)
 #pragma warning(default : 4232)
 
 EFI_WIN_NT_THUNK_PROTOCOL *gWinNt = &mWinNtThunkTable;
+EFI_WIN_NT_SOCKET_THUNK_PROTOCOL *gWinNtSocket = &mWinNtSocketThunkTable;

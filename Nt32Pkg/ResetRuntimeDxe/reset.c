@@ -30,6 +30,8 @@ Abstract:
 #include <Library/UefiDriverEntryPoint.h>
 #include <Library/WinNtLib.h>
 #include <Library/UefiBootServicesTableLib.h>
+#include <Library/Tpm2CommandLib.h>
+#include <Library/Tpm2SimulatorLib.h>
 
 #define EFI_NT32_MEMORY_FILE_NAME  L"MemoryBin"
 
@@ -193,6 +195,11 @@ Returns:
         }
       }
     }
+  }
+
+  if (FeaturePcdGet (PcdWinNtTpm2Enable)) {
+    Tpm2Shutdown (TPM_SU_CLEAR);
+    Tpm2SimulatorShutdown ();
   }
 
   //

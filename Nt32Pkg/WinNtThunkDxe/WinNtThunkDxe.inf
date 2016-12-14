@@ -46,6 +46,7 @@
 [Protocols]
   gEfiDevicePathProtocolGuid                    # PROTOCOL ALWAYS_PRODUCED
   gEfiWinNtThunkProtocolGuid                    # PROTOCOL ALWAYS_PRODUCED
+  gEfiWinNtSocketThunkProtocolGuid              # PROTOCOL ALWAYS_PRODUCED
 
 [depex]
   TRUE

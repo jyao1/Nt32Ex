@@ -1,7 +1,7 @@
 ## @file
-# NT Emulation Reset Architectural Protocol Driver as defined in TIANO
+# A library to produce the global variable 'gWinNt'
 #
-# This Reset module simulates system reset by process exit on NT.
+# This library contains a single global variable 'gWinNt' along with a constructor to initialize that global.
 # Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
 #
 #  This program and the accompanying materials
@@ -13,51 +13,43 @@
 #
 #
 ##
-
 [Defines]
   INF_VERSION                    = 0x00010005
-  BASE_NAME                      = Reset
-  FILE_GUID                      = BA929954-35B0-4dd3-90CD-9634BD7E1CF1
-  MODULE_TYPE                    = DXE_DRIVER
+  BASE_NAME                      = PeiWinNtLib
+  FILE_GUID                      = 55C8DEDE-A347-4182-91FB-F88A17186DEE
+  MODULE_TYPE                    = PEIM
   VERSION_STRING                 = 1.0
-
-  ENTRY_POINT                    = InitializeNtReset
+  LIBRARY_CLASS                  = WinNtLib|PEIM PEI_CORE
+  CONSTRUCTOR                    = WinNtLibConstructor
 
 #
 # The following information is for reference only and not required by the build tools.
 #
 #  VALID_ARCHITECTURES           = IA32
 #
+#  HOB Guid C Name: gEfiWinNtThunkProtocolGuid Hob Type: GUID_EXTENSION
+#
 
 [Sources]
-  reset.c
+  WinNtLib.c
 
 [Packages]
   MdePkg/MdePkg.dec
-  SecurityPkg/SecurityPkg.dec
   Nt32Pkg/Nt32Pkg.dec
 
 [LibraryClasses]
-  UefiBootServicesTableLib
-  WinNtLib
-  UefiDriverEntryPoint
-  DebugLib
   HobLib
-  BaseLib
-  PrintLib
-  Tpm2CommandLib
-  Tpm2SimulatorLib
-
-[FeaturePcd]
-  gEfiNt32PkgTokenSpaceGuid.PcdWinNtCapsuleEnable
-  gEfiNt32PkgTokenSpaceGuid.PcdWinNtTpm2Enable
-
-[Guids]
-  gEfiWinNtMemoryLayoutGuid
+  DebugLib
+  PeiServicesLib
 
 [Protocols]
-  gEfiResetArchProtocolGuid                     # PROTOCOL ALWAYS_PRODUCED
-
+  gEfiWinNtThunkProtocolGuid      # Used as HOB in the code.
+  gEfiWinNtSocketThunkProtocolGuid      # Used as HOB in the code.
+  
+[Ppis]
+  gPeiNtThunkPpiGuid
+  gPeiNtSocketThunkPpiGuid
+  
 [Depex]
-  TRUE
-
+  gPeiNtThunkPpiGuid AND
+  gPeiNtSocketThunkPpiGuid

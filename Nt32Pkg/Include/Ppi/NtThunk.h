@@ -53,4 +53,35 @@ typedef struct {
 
 extern EFI_GUID gPeiNtThunkPpiGuid;
 
+
+
+#define PEI_NT_SOCKET_THUNK_PPI_GUID \
+  { \
+    0x7793141d, 0xda74, 0x4733, { 0x9a, 0xcb, 0x76, 0xc7, 0x17, 0x55, 0x8, 0x6a } \
+  }
+
+typedef
+VOID *
+(EFIAPI *PEI_NT_SOCKET_THUNK_INTERFACE) (
+  VOID
+  );
+
+/*++
+
+Routine Description:
+  Export of EFI_WIN_NT_SOCKET_THUNK_PROTOCOL from the Windows SEC.
+
+Arguments:
+  InterfaceBase - Address of the EFI_WIN_NT_SOCKET_THUNK_PROTOCOL
+
+Returns:
+  EFI_SUCCESS - Data returned
+
+--*/
+typedef struct {
+  PEI_NT_SOCKET_THUNK_INTERFACE  NtSocketThunk;
+} PEI_NT_SOCKET_THUNK_PPI;
+
+extern EFI_GUID gPeiNtSocketThunkPpiGuid;
+
 #endif

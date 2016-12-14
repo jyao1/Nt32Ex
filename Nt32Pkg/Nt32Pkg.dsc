@@ -49,6 +49,7 @@
   DEFINE CAPSULE_ENABLE          = TRUE
   DEFINE RECOVERY_ENABLE         = TRUE
   DEFINE MICROCODE_UPDATE_ENABLE = TRUE
+  DEFINE TPM2_ENABLE             = TRUE
   DEFINE NETWORK_ENABLE          = FALSE
   DEFINE PERF_ENABLE             = FALSE
   DEFINE PROFILE_ENABLE          = FALSE
@@ -176,6 +177,10 @@
   MicrocodeFlashAccessLib|Nt32Pkg/Feature/Capsule/Library/PlatformFlashAccessLib/PlatformFlashAccessLib.inf
 !endif
 
+  Tpm2CommandLib|SecurityPkg/Library/Tpm2CommandLib/Tpm2CommandLib.inf
+  Tcg2PpVendorLib|SecurityPkg/Library/Tcg2PpVendorLibNull/Tcg2PpVendorLibNull.inf
+  ResetSystemLib|Nt32Pkg/Library/ResetSystemLibWinNt/ResetSystemLibWinNt.inf
+
 [LibraryClasses.common.USER_DEFINED]
   DebugLib|MdePkg/Library/BaseDebugLibNull/BaseDebugLibNull.inf
   PeCoffExtraActionLib|MdePkg/Library/BasePeCoffExtraActionLibNull/BasePeCoffExtraActionLibNull.inf
@@ -211,6 +216,9 @@
 !if $(SECURE_BOOT_ENABLE) == TRUE  
   BaseCryptLib|CryptoPkg/Library/BaseCryptLib/PeiCryptLib.inf
 !endif
+  WinNtLib|Nt32Pkg/Library/PeiWinNtLib/PeiWinNtLib.inf
+  HashLib|SecurityPkg/Library/HashLibBaseCryptoRouter/HashLibBaseCryptoRouterPei.inf
+  Tcg2PhysicalPresenceLib|SecurityPkg/Library/PeiTcg2PhysicalPresenceLib/PeiTcg2PhysicalPresenceLib.inf
 
 [LibraryClasses.common]
   #
@@ -232,6 +240,11 @@
 !if $(PERF_ENABLE) == TRUE
   PerformanceLib|MdeModulePkg/Library/DxePerformanceLib/DxePerformanceLib.inf
 !endif
+
+  HashLib|SecurityPkg/Library/HashLibBaseCryptoRouter/HashLibBaseCryptoRouterDxe.inf
+  Tcg2PhysicalPresenceLib|SecurityPkg/Library/DxeTcg2PhysicalPresenceLib/DxeTcg2PhysicalPresenceLib.inf
+  Tpm2DeviceLib|SecurityPkg/Library/Tpm2DeviceLibTcg2/Tpm2DeviceLibTcg2.inf
+  Tpm2SimulatorLib|Nt32Pkg/Feature/Tpm2/Tpm2Simulator/Tpm2DeviceLibSimulator.inf
 
 [LibraryClasses.common.DXE_CORE]
   HobLib|MdePkg/Library/DxeCoreHobLib/DxeCoreHobLib.inf
@@ -312,6 +325,9 @@
 !if $(RECOVERY_ENABLE)
   gEfiNt32PkgTokenSpaceGuid.PcdWinNtRecoveryEnable|TRUE
 !endif
+!if $(TPM2_ENABLE)
+  gEfiNt32PkgTokenSpaceGuid.PcdWinNtTpm2Enable|TRUE
+!endif
 
 [PcdsFixedAtBuild]
 !if $(PROFILE_ENABLE)
@@ -382,6 +398,9 @@
   gUefiCpuPkgTokenSpaceGuid.PcdCpuMicrocodePatchAddress|0
   gUefiCpuPkgTokenSpaceGuid.PcdCpuMicrocodePatchRegionSize|0
 !endif
+
+  # gEfiTpmDeviceInstanceTpm2SimulatorGuid     = { 0x6480adca, 0xa594, 0x41b4, { 0xb0, 0x6b, 0xdf, 0xff, 0xd7, 0x5d, 0x69, 0x45 } }
+  gEfiSecurityPkgTokenSpaceGuid.PcdTpmInstanceGuid|{0xca, 0xad, 0x80, 0x64, 0x94, 0xa5, 0xb4, 0x41, 0xb0, 0x6b, 0xdf, 0xff, 0xd7, 0x5d, 0x69, 0x45}
 
 [PcdsDynamicDefault.Ia32]
 #  gEfiNt32PkgTokenSpaceGuid.PcdWinNtFileSystem|L".!..\..\..\..\EdkShellBinPkg\Bin\Ia32\Apps"|VOID*|106
@@ -477,6 +496,15 @@
   MdeModulePkg/Core/DxeIplPeim/DxeIpl.inf
 
   Nt32Pkg/ResetPei/ResetPei.inf
+
+!if $(TPM2_ENABLE)
+  SecurityPkg/Tcg/Tcg2Pei/Tcg2Pei.inf {
+    <LibraryClasses>
+      Tpm2DeviceLib|Nt32Pkg/Feature/Tpm2/Tpm2Simulator/Tpm2DeviceLibSimulator.inf
+      NULL|SecurityPkg/Library/HashInstanceLibSha1/HashInstanceLibSha1.inf
+      NULL|SecurityPkg/Library/HashInstanceLibSha256/HashInstanceLibSha256.inf
+  }
+!endif
 
   ##
   #  DXE Phase modules
@@ -661,6 +689,16 @@
       NULL|IntelFrameworkModulePkg/Library/LegacyBootManagerLib/LegacyBootManagerLib.inf
   }
   MdeModulePkg/Logo/LogoDxe.inf
+
+!if $(TPM2_ENABLE)
+  SecurityPkg/Tcg/Tcg2Dxe/Tcg2Dxe.inf {
+    <LibraryClasses>
+      Tpm2DeviceLib|Nt32Pkg/Feature/Tpm2/Tpm2Simulator/Tpm2DeviceLibSimulator.inf
+      NULL|SecurityPkg/Library/HashInstanceLibSha1/HashInstanceLibSha1.inf
+      NULL|SecurityPkg/Library/HashInstanceLibSha256/HashInstanceLibSha256.inf
+  }
+  Nt32Pkg/Feature/Tpm2/Tcg2Config/Tcg2ConfigDxe.inf
+!endif
 
 !if $(CAPSULE_ENABLE)
   MdeModulePkg/Universal/EsrtDxe/EsrtDxe.inf

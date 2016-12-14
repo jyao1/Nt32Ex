@@ -96,6 +96,8 @@ Returns:
                   &ControllerHandle,
                   &gEfiWinNtThunkProtocolGuid,
                   gWinNt,
+                  &gEfiWinNtSocketThunkProtocolGuid,
+                  gWinNtSocket,
                   &gEfiDevicePathProtocolGuid,
                   &mWinNtThunkDevicePath,
                   NULL

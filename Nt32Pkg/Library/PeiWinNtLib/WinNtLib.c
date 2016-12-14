@@ -19,12 +19,13 @@ Abstract:
 
 **/
 
-#include <PiDxe.h>
-#include <WinNtDxe.h>
+#include <PiPei.h>
+#include <WinNtPeim.h>
+#include <Ppi/NtThunk.h>
+#include <Library/PeiServicesLib.h>
 #include <Library/WinNtLib.h>
 #include <Library/DebugLib.h>
 #include <Library/HobLib.h>
-
 
 EFI_WIN_NT_THUNK_PROTOCOL *gWinNt;
 EFI_WIN_NT_SOCKET_THUNK_PROTOCOL *gWinNtSocket;
@@ -32,8 +33,8 @@ EFI_WIN_NT_SOCKET_THUNK_PROTOCOL *gWinNtSocket;
 EFI_STATUS
 EFIAPI
 WinNtLibConstructor (
-  IN EFI_HANDLE        ImageHandle,
-  IN EFI_SYSTEM_TABLE  *SystemTable
+  IN EFI_PEI_FILE_HANDLE     FileHandle,
+  IN CONST EFI_PEI_SERVICES  **PeiServices
   )
 /*++
 
@@ -45,16 +46,29 @@ Returns:
 
 --*/
 {
-  EFI_HOB_GUID_TYPE        *GuidHob;
+  EFI_STATUS               Status;
+  PEI_NT_THUNK_PPI         *NtThunkPpi;
+  PEI_NT_SOCKET_THUNK_PPI  *NtSocketThunkPpi;
 
-  GuidHob = GetFirstGuidHob (&gEfiWinNtThunkProtocolGuid);
-  ASSERT (GuidHob != NULL);
-  gWinNt = (EFI_WIN_NT_THUNK_PROTOCOL *)(*(UINTN *)(GET_GUID_HOB_DATA (GuidHob)));
-  ASSERT (gWinNt != NULL);
+  Status = PeiServicesLocatePpi (
+              &gPeiNtThunkPpiGuid,
+              0,
+              NULL,
+              (VOID **) &NtThunkPpi
+              );
+  ASSERT_EFI_ERROR (Status);
 
-  GuidHob = GetFirstGuidHob (&gEfiWinNtSocketThunkProtocolGuid);
-  ASSERT (GuidHob != NULL);
-  gWinNtSocket = (EFI_WIN_NT_THUNK_PROTOCOL *)(*(UINTN *)(GET_GUID_HOB_DATA (GuidHob)));
-  ASSERT (gWinNtSocket != NULL);
+  gWinNt  = (EFI_WIN_NT_THUNK_PROTOCOL *) NtThunkPpi->NtThunk ();
+
+  Status = PeiServicesLocatePpi (
+              &gPeiNtSocketThunkPpiGuid,
+              0,
+              NULL,
+              (VOID **) &NtSocketThunkPpi
+              );
+  ASSERT_EFI_ERROR (Status);
+
+  gWinNtSocket  = (EFI_WIN_NT_SOCKET_THUNK_PROTOCOL *) NtSocketThunkPpi->NtSocketThunk ();
+
   return EFI_SUCCESS;
 }

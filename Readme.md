@@ -60,6 +60,25 @@ After build, a user need copy MICROCODECAPSULE.Cap from FV dir to $(ARCH) dir, a
 Since Microcode update uses same way as capsule update, the limitation mentioned in Capsule update is also applied here.
 Besides that, NT32 fake Microcode update uses dummy empty Microcode, not real Microcode. NT32 fake Microcode update driver (Nt32Pkg\Feature\Microcode\MicrocodeUpdateDxe) is copied from UefiCpuPkg\Feature\Capsule\MicrocodeUpdateDxe. The difference is that the NT32 fake version does not touch real CPU MSR register.
 
+- TPM2.0
+
+A user can enable TPM2 simulator support on NT32.
+
+In build command line, a user may use `-D TPM2_ENABLE= TRUE` to enable TPM2.
+This macro is defined in Nt32Pkg.dsc file.
+
+The purpose of NT32 TPM2 support is to debug or test the hardware independent TPM2 feature, such as Tcg2Pei, Tcg2Dxe.
+
+Nt32TPM2 cannot be used to validate TPM2 hardware dependent modules such as Tpm2DeviceLibDTpm. Nt32TPM2 uses the simulatore version in Nt32Pkg\Feature\Tpm2 directory.
+
+Step:
+
+1) A user need download the TPM2 simulator from https://www.microsoft.com/en-us/download/details.aspx?id=52507
+
+2) A user runs "TSS.MSR v2.0 TPM2 Simulator\Simulator.exe" in the windows OS.
+
+3) Now the user can run SecMain.exe and the NT32 emulator will communicate with TPM2.0 simulator.
+
 ## Known limitation:
 This package is only the sample code to show the concept.
 It does not have a full validation and does not meet the production quality yet.

@@ -64,6 +64,7 @@ Returns:
   EFI_STATUS              Status;
   EFI_PEI_PPI_DESCRIPTOR  *PpiDescriptor;
   PEI_NT_THUNK_PPI        *PeiNtService;
+  PEI_NT_SOCKET_THUNK_PPI *PeiNtSocketService;
   VOID                    *Ptr;
 
   DEBUG ((EFI_D_ERROR, "NT 32 WinNT Stuff PEIM Loaded\n"));
@@ -84,5 +85,25 @@ Returns:
     &Ptr,                                // Buffer
     sizeof (VOID *)                      // Sizeof Buffer
     );
+
+
+  Status = (**PeiServices).LocatePpi (
+                            (const EFI_PEI_SERVICES **)PeiServices,
+                            &gPeiNtSocketThunkPpiGuid,  // GUID
+                            0,                    // INSTANCE
+                            &PpiDescriptor,       // EFI_PEI_PPI_DESCRIPTOR
+                            (VOID**)&PeiNtSocketService         // PPI
+                            );
+  ASSERT_EFI_ERROR (Status);
+
+  Ptr = PeiNtSocketService->NtSocketThunk ();
+
+  BuildGuidDataHob (
+    &gEfiWinNtSocketThunkProtocolGuid,   // Guid
+    &Ptr,                                // Buffer
+    sizeof (VOID *)                      // Sizeof Buffer
+    );
+
+
   return Status;
 }

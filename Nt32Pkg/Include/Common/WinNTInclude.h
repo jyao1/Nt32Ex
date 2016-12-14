@@ -51,7 +51,13 @@ Abstract:
 typedef UINT32 size_t ;
 #endif
 
+#define   WIN32_LEAN_AND_MEAN // work-around for WinSock2.h
 #include "windows.h"
+#include <mmiscapi2.h>
+#include <malloc.h>
+#include <stdlib.h>
+#include <winioctl.h>
+#include <WinSock2.h>
 
 #undef GUID
 #undef _LIST_ENTRY

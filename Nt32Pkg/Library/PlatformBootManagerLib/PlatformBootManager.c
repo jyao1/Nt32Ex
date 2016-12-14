@@ -209,6 +209,14 @@ PlatformBootManagerBeforeConsole (
     }
   }
 
+  if (FeaturePcdGet (PcdWinNtTpm2Enable)) {
+    if (Tcg2PhysicalPresenceLibNeedUserConfirm()) {
+      // Connect Console
+      EfiBootManagerConnectAll ();
+    }
+    Tcg2PhysicalPresenceLibProcessRequest (NULL);
+  }
+
   //
   // From PI spec vol2:
   // Prior to invoking any UEFI drivers, applications, or connecting consoles, 

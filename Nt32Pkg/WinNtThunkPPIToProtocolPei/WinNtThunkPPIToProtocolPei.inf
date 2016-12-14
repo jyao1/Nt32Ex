@@ -45,10 +45,12 @@
 
 [Protocols]
   gEfiWinNtThunkProtocolGuid                    # PROTOCOL ALWAYS_CONSUMED
+  gEfiWinNtSocketThunkProtocolGuid              # PROTOCOL ALWAYS_CONSUMED
 
 
 [Ppis]
   gPeiNtThunkPpiGuid                            # PPI ALWAYS_CONSUMED
+  gPeiNtSocketThunkPpiGuid                      # PPI ALWAYS_CONSUMED
 
 [depex]
   gPeiNtThunkPpiGuid AND gEfiPeiMemoryDiscoveredPpiGuid

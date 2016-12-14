@@ -44,4 +44,5 @@
 
 [Protocols]
   gEfiWinNtThunkProtocolGuid      # Used as HOB in the code.
+  gEfiWinNtSocketThunkProtocolGuid      # Used as HOB in the code.
   

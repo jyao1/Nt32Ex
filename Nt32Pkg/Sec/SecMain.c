@@ -46,6 +46,8 @@ PEI_NT_AUTOSCAN_PPI                       mSecNtAutoScanPpi     = { SecWinNtPeiA
 
 PEI_NT_THUNK_PPI                          mSecWinNtThunkPpi     = { SecWinNtWinNtThunkAddress };
 
+PEI_NT_SOCKET_THUNK_PPI                   mSecWinNtSocketThunkPpi = { SecWinNtWinNtSocketThunkAddress };
+
 EFI_PEI_PROGRESS_CODE_PPI                 mSecStatusCodePpi     = { SecPeiReportStatusCode };
 
 NT_FWH_PPI                                mSecFwhInformationPpi = { SecWinNtFdAddress };
@@ -74,6 +76,11 @@ EFI_PEI_PPI_DESCRIPTOR  gPrivateDispatchTable[] = {
   },
   {
     EFI_PEI_PPI_DESCRIPTOR_PPI,
+    &gPeiNtSocketThunkPpiGuid,
+    &mSecWinNtSocketThunkPpi
+  },
+  {
+    EFI_PEI_PPI_DESCRIPTOR_PPI,
     &gEfiPeiStatusCodePpiGuid,
     &mSecStatusCodePpi
   },
@@ -86,6 +93,11 @@ EFI_PEI_PPI_DESCRIPTOR  gPrivateDispatchTable[] = {
     EFI_PEI_PPI_DESCRIPTOR_PPI,
     &gPeiNtRecoveryPpiGuid,
     &mSecNtRecoveryPpi
+  },
+  {
+    EFI_PEI_PPI_DESCRIPTOR_PPI,
+    &gEfiTpmDeviceSelectedGuid,
+    NULL
   },
   {
     EFI_PEI_PPI_DESCRIPTOR_PPI,
@@ -849,6 +861,30 @@ Returns:
 --*/
 {
   return gWinNt;
+}
+
+VOID *
+EFIAPI
+SecWinNtWinNtSocketThunkAddress (
+  VOID
+  )
+/*++
+
+Routine Description:
+  Since the SEC is the only Windows program in stack it must export
+  an interface to do Win API calls. That's what the WinNtThunk address
+  is for. gWinNt is initialized in WinNtThunk.c.
+
+Arguments:
+  InterfaceSize - sizeof (EFI_WIN_NT_THUNK_PROTOCOL);
+  InterfaceBase - Address of the gWinNt global
+
+Returns:
+  EFI_SUCCESS - Data returned
+
+--*/
+{
+  return gWinNtSocket;
 }
 
 

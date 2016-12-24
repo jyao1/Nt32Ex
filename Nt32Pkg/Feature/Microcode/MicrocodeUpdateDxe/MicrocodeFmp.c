@@ -28,6 +28,29 @@ EFI_FIRMWARE_MANAGEMENT_PROTOCOL mFirmwareManagementProtocol = {
   FmpSetPackageInfo
 };
 
+typedef struct {
+  VENDOR_DEVICE_PATH        VendorDevice;
+  EFI_DEVICE_PATH_PROTOCOL  EndDevice;
+} EFI_MCU_DEVICE_PATH;
+
+EFI_MCU_DEVICE_PATH mMcuDevicePath = {
+  {
+    {
+      HARDWARE_DEVICE_PATH,
+      HW_VENDOR_DP,
+      sizeof(VENDOR_DEVICE_PATH),
+      0
+    },
+    MICROCODE_FMP_IMAGE_TYPE_ID_GUID
+  },
+  {
+      END_DEVICE_PATH_TYPE,
+      END_ENTIRE_DEVICE_PATH_SUBTYPE,
+      sizeof(EFI_DEVICE_PATH_PROTOCOL),
+      0
+  }
+};
+
 /**
   Initialize Microcode Descriptor.
 
@@ -532,6 +555,12 @@ MicrocodeFmpMain (
     mMicrocodeFmpPrivate = NULL;
     return Status;
   }
+  gBS->InstallProtocolInterface (
+         &mMicrocodeFmpPrivate->Handle,
+         &gEfiDevicePathProtocolGuid,
+         EFI_NATIVE_INTERFACE,
+         &mMcuDevicePath
+         );
 
   return Status;
 }

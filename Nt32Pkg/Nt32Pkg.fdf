@@ -548,14 +548,28 @@ HARDWARE_INSTANCE         = 0x0
 
 FILE DATA = Nt32Pkg/Feature/Microcode/MicrocodeDummy/M0130678806.mcb
 
-[Capsule.MicrocodeCapsule]
+[Capsule.MicrocodeCapsule1]
 CAPSULE_GUID                = 6dcbd5ed-e82d-4c44-bda1-7194199ad92a # gEfiFmpCapsuleGuid
 CAPSULE_FLAGS               = PersistAcrossReset,InitiateReset
 CAPSULE_HEADER_SIZE         = 0x20
 CAPSULE_HEADER_INIT_VERSION = 0x1
 
 FMP_PAYLOAD = FmpPayloadMicrocode1
+
+[Capsule.MicrocodeCapsule2]
+CAPSULE_GUID                = 6dcbd5ed-e82d-4c44-bda1-7194199ad92a # gEfiFmpCapsuleGuid
+CAPSULE_FLAGS               = PersistAcrossReset,InitiateReset
+CAPSULE_HEADER_SIZE         = 0x20
+CAPSULE_HEADER_INIT_VERSION = 0x1
+
 FMP_PAYLOAD = FmpPayloadMicrocode2
+
+[Capsule.MicrocodeCapsule3]
+CAPSULE_GUID                = 6dcbd5ed-e82d-4c44-bda1-7194199ad92a # gEfiFmpCapsuleGuid
+CAPSULE_FLAGS               = PersistAcrossReset,InitiateReset
+CAPSULE_HEADER_SIZE         = 0x20
+CAPSULE_HEADER_INIT_VERSION = 0x1
+
 FMP_PAYLOAD = FmpPayloadMicrocode3
 
 !endif

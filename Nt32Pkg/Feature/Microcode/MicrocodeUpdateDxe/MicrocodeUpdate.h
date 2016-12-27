@@ -21,6 +21,7 @@
 #include <Guid/MicrocodeFmp.h>
 
 #include <Protocol/FirmwareManagement.h>
+#include <Protocol/MpService.h>
 
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
@@ -50,15 +51,41 @@ typedef struct {
   UINT32 LastAttemptStatus;
 } MICROCODE_FMP_LAST_ATTEMPT_VARIABLE;
 
+typedef struct {
+  CPU_MICROCODE_HEADER   *MicrocodeEntryPoint;
+  UINTN                  TotalSize;
+  BOOLEAN                InUse;
+} MICROCODE_INFO;
+
+typedef struct {
+  UINTN                  CpuIndex;
+  UINT32                 ProcessorSignature;
+  UINT8                  PlatformId;
+  UINT32                 MicrocodeRevision;
+  UINTN                  MicrocodeIndex;
+} PROCESSOR_INFO;
+
+typedef struct {
+  UINT64                 Address;
+  UINT32                 Revision;
+} MICROCODE_LOAD_BUFFER;
+
 struct _MICROCODE_FMP_PRIVATE_DATA {
   UINT32                               Signature;
   EFI_FIRMWARE_MANAGEMENT_PROTOCOL     Fmp;
   EFI_HANDLE                           Handle;
+  VOID                                 *MicrocodePatchAddress;
+  UINTN                                MicrocodePatchRegionSize;
   UINT8                                DescriptorCount;
   EFI_FIRMWARE_IMAGE_DESCRIPTOR        *ImageDescriptor;
+  MICROCODE_INFO                       *MicrocodeInfo;
   UINT32                               PackageVersion;
   CHAR16                               *PackageVersionName;
   MICROCODE_FMP_LAST_ATTEMPT_VARIABLE  LastAttempt;
+  EFI_MP_SERVICES_PROTOCOL             *MpService;
+  UINTN                                BspIndex;
+  UINTN                                ProcessorCount;
+  PROCESSOR_INFO                       *ProcessorInfo;
 };
 
 typedef struct _MICROCODE_FMP_PRIVATE_DATA  MICROCODE_FMP_PRIVATE_DATA;
@@ -84,63 +111,127 @@ typedef struct _MICROCODE_FMP_PRIVATE_DATA  MICROCODE_FMP_PRIVATE_DATA;
   )
 
 /**
+  Get Microcode Region.
+
+  @param[out] MicrocodePatchAddress      The address of Microcode
+  @param[out] MicrocodePatchRegionSize   The region size of Microcode
+
+  @retval TRUE   The Microcode region is returned.
+  @retval FALSE  No Microcode region.
+**/
+BOOLEAN
+GetMicrocodeRegion (
+  OUT VOID     **MicrocodePatchAddress,
+  OUT UINTN    *MicrocodePatchRegionSize
+  );
+
+/**
+  Collect processor information.
+  The function prototype for invoking a function on an Application Processor.
+
+  @param[in,out] Buffer  The pointer to private data buffer.
+**/
+VOID
+EFIAPI
+CollectProcessorInfo (
+  IN OUT VOID  *Buffer
+  );
+
+/**
   Get current Microcode information.
 
-  @param[out]  ImageDescriptor  Microcode ImageDescriptor
-  @param[in]   DescriptorCount  The count of Microcode ImageDescriptor allocated.
+  The ProcessorInformation (BspIndex/ProcessorCount/ProcessorInfo)
+  in MicrocodeFmpPrivate must be initialized.
+
+  The MicrocodeInformation (DescriptorCount/ImageDescriptor/MicrocodeInfo)
+  in MicrocodeFmpPrivate may not be avaiable in this function.
+
+  @param[in]   MicrocodeFmpPrivate        The Microcode driver private data
+  @param[in]   DescriptorCount            The count of Microcode ImageDescriptor allocated.
+  @param[out]  ImageDescriptor            Microcode ImageDescriptor
+  @param[out]  MicrocodeInfo              Microcode information
 
   @return Microcode count
 **/
 UINTN
 GetMicrocodeInfo (
+  IN  MICROCODE_FMP_PRIVATE_DATA     *MicrocodeFmpPrivate,
+  IN  UINTN                          DescriptorCount,  OPTIONAL
   OUT EFI_FIRMWARE_IMAGE_DESCRIPTOR  *ImageDescriptor, OPTIONAL
-  IN  UINTN                          DescriptorCount   OPTIONAL
+  OUT MICROCODE_INFO                 *MicrocodeInfo    OPTIONAL
   );
 
 /**
-  Read Microcode.
+  Verify Microcode.
 
-  @param[in]       ImageIndex The index of Microcode image.
-  @param[in, out]  Image      The Microcode image buffer.
-  @param[in, out]  ImageSize  The size of Microcode image buffer in bytes.
+  Caution: This function may receive untrusted input.
 
-  @retval EFI_SUCCESS    The Microcode image is read.
-  @retval EFI_NOT_FOUND  The Microcode image is not found.
+  @param[in]  MicrocodeFmpPrivate        The Microcode driver private data
+  @param[in]  Image                      The Microcode image buffer.
+  @param[in]  ImageSize                  The size of Microcode image buffer in bytes.
+  @param[in]  TryLoad                    Try to load Microcode or not.
+  @param[out] LastAttemptStatus          The last attempt status, which will be recorded in ESRT and FMP EFI_FIRMWARE_IMAGE_DESCRIPTOR.
+  @param[out] AbortReason                A pointer to a pointer to a null-terminated string providing more
+                                         details for the aborted operation. The buffer is allocated by this function
+                                         with AllocatePool(), and it is the caller's responsibility to free it with a
+                                         call to FreePool().
+  @param[in, out] TargetCpuIndex         On input, the index of target CPU which tries to match the Microcode. (UINTN)-1 means to try all.
+                                         On output, the index of target CPU which matches the Microcode.
+
+  @retval EFI_SUCCESS               The Microcode image passes verification.
+  @retval EFI_VOLUME_CORRUPTED      The Microcode image is corrupt.
+  @retval EFI_INCOMPATIBLE_VERSION  The Microcode image version is incorrect.
+  @retval EFI_UNSUPPORTED           The Microcode ProcessorSignature or ProcessorFlags is incorrect.
+  @retval EFI_SECURITY_VIOLATION    The Microcode image fails to load.
 **/
 EFI_STATUS
-MicrocodeRead (
-  IN UINTN      ImageIndex,
-  IN OUT VOID   *Image,
-  IN OUT UINTN  *ImageSize
+VerifyMicrocode (
+  IN  MICROCODE_FMP_PRIVATE_DATA  *MicrocodeFmpPrivate,
+  IN  VOID                        *Image,
+  IN  UINTN                       ImageSize,
+  IN  BOOLEAN                     TryLoad,
+  OUT UINT32                      *LastAttemptStatus,
+  OUT CHAR16                      **AbortReason,   OPTIONAL
+  IN OUT UINTN                    *TargetCpuIndex  OPTIONAL
   );
 
 /**
   Write Microcode.
 
-  @param[in]   ImageIndex         The index of Microcode image.
-  @param[in]   Image              The Microcode image buffer.
-  @param[in]   ImageSize          The size of Microcode image buffer in bytes.
-  @param[out]  LastAttemptVersion The last attempt version, which will be recorded in ESRT and FMP EFI_FIRMWARE_IMAGE_DESCRIPTOR.
-  @param[out]  LastAttemptStatus  The last attempt status, which will be recorded in ESRT and FMP EFI_FIRMWARE_IMAGE_DESCRIPTOR.
-  @param[out]  AbortReason        A pointer to a pointer to a null-terminated string providing more
-                                  details for the aborted operation. The buffer is allocated by this function
-                                  with AllocatePool(), and it is the caller's responsibility to free it with a
-                                  call to FreePool().
+  @param[in]   MicrocodeFmpPrivate The Microcode driver private data
+  @param[in]   Image               The Microcode image buffer.
+  @param[in]   ImageSize           The size of Microcode image buffer in bytes.
+  @param[out]  LastAttemptVersion  The last attempt version, which will be recorded in ESRT and FMP EFI_FIRMWARE_IMAGE_DESCRIPTOR.
+  @param[out]  LastAttemptStatus   The last attempt status, which will be recorded in ESRT and FMP EFI_FIRMWARE_IMAGE_DESCRIPTOR.
+  @param[out]  AbortReason         A pointer to a pointer to a null-terminated string providing more
+                                   details for the aborted operation. The buffer is allocated by this function
+                                   with AllocatePool(), and it is the caller's responsibility to free it with a
+                                   call to FreePool().
 
   @retval EFI_SUCCESS               The Microcode image is written.
   @retval EFI_VOLUME_CORRUPTED      The Microcode image is corrupt.
   @retval EFI_INCOMPATIBLE_VERSION  The Microcode image version is incorrect.
   @retval EFI_SECURITY_VIOLATION    The Microcode image fails to load.
-  @retval EFI_WRITE_PROTECTED   The flash device is read only.
+  @retval EFI_WRITE_PROTECTED       The flash device is read only.
 **/
 EFI_STATUS
 MicrocodeWrite (
-  IN UINTN    ImageIndex,
-  IN VOID     *Image,
-  IN UINTN    ImageSize,
-  OUT UINT32  *LastAttemptVersion,
-  OUT UINT32  *LastAttemptStatus,
-  OUT CHAR16  **AbortReason
+  IN MICROCODE_FMP_PRIVATE_DATA    *MicrocodeFmpPrivate,
+  IN VOID                          *Image,
+  IN UINTN                         ImageSize,
+  OUT UINT32                       *LastAttemptVersion,
+  OUT UINT32                       *LastAttemptStatus,
+  OUT CHAR16                       **AbortReason
+  );
+
+/**
+  Dump private information.
+
+  @param[in] MicrocodeFmpPrivate private data structure.
+**/
+VOID
+DumpPrivateInfo (
+  IN MICROCODE_FMP_PRIVATE_DATA  *MicrocodeFmpPrivate
   );
 
 /**

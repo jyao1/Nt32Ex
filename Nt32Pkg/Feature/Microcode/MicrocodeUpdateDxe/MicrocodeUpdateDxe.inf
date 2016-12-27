@@ -30,6 +30,7 @@
 #
 
 [Sources]
+  MicrocodeUpdate.h
   MicrocodeFmp.c
   MicrocodeUpdate.c
 
@@ -51,17 +52,19 @@
   MicrocodeFlashAccessLib
 
 [Guids]
-  gMicrocodeFmpImageTypeIdGuid
+  gMicrocodeFmpImageTypeIdGuid                  ## CONSUMES   ## GUID
 
 [Protocols]
-  gEfiFirmwareManagementProtocolGuid            ## SOMTIMES_PRODUCE
+  gEfiFirmwareManagementProtocolGuid            ## PRODUCES
+  gEfiMpServiceProtocolGuid                     ## CONSUMES
 
 [Pcd]
   gUefiCpuPkgTokenSpaceGuid.PcdCpuMicrocodePatchAddress            ## CONSUMES
   gUefiCpuPkgTokenSpaceGuid.PcdCpuMicrocodePatchRegionSize         ## CONSUMES
 
 [Depex]
-  gEfiVariableArchProtocolGuid
+  gEfiVariableArchProtocolGuid AND
+  gEfiMpServiceProtocolGuid
 
 [UserExtensions.TianoCore."ExtraFiles"]
   MicrocodeUpdateDxeExtra.uni

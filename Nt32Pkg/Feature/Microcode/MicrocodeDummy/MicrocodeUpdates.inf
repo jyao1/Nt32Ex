@@ -30,8 +30,8 @@ FFS_EXT              = .ffs
 
 [sources.common]
 M0130673321.inc
-M0130678806.inc
 M023067221D.inc
+M0130678806.inc
 
 [includes.common]
 

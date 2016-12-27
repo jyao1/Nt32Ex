@@ -273,6 +273,7 @@ INF  MdeModulePkg/Universal/MemoryTest/NullMemoryTestDxe/NullMemoryTestDxe.inf
 INF  MdeModulePkg/Universal/HiiDatabaseDxe/HiiDatabaseDxe.inf
 INF  Nt32Pkg/WinNtThunkDxe/WinNtThunkDxe.inf
 INF  Nt32Pkg/CpuRuntimeDxe/CpuRuntimeDxe.inf
+INF  Nt32Pkg/MpServicesDxe/MpServicesDxe.inf
 INF  MdeModulePkg/Universal/BdsDxe/BdsDxe.inf
 INF  MdeModulePkg/Application/UiApp/UiApp.inf
 INF  MdeModulePkg/Universal/DriverHealthManagerDxe/DriverHealthManagerDxe.inf
@@ -369,6 +370,11 @@ INF  NetworkPkg/HttpBootDxe/HttpBootDxe.inf
 INF  NetworkPkg/DnsDxe/DnsDxe.inf
 INF  NetworkPkg/HttpDxe/HttpDxe.inf
 INF  NetworkPkg/HttpUtilitiesDxe/HttpUtilitiesDxe.inf
+!endif
+
+!if $(TLS_ENABLE) == TRUE
+INF  NetworkPkg/TlsDxe/TlsDxe.inf
+INF  NetworkPkg/TlsAuthConfigDxe/TlsAuthConfigDxe.inf
 !endif
 
 INF  MdeModulePkg/Application/BootManagerMenuApp/BootManagerMenuApp.inf
@@ -535,7 +541,7 @@ FILE DATA = Nt32Pkg/Feature/Microcode/MicrocodeDummy/M023067221D.mcb
 [FmpPayload.FmpPayloadMicrocode2]
 IMAGE_HEADER_INIT_VERSION = 0x02
 IMAGE_TYPE_ID             = 96d4fdcd-1502-424d-9d4c-9b12d2dcae5c # gMicrocodeFmpImageTypeIdGuid
-IMAGE_INDEX               = 0x2
+IMAGE_INDEX               = 0x1
 HARDWARE_INSTANCE         = 0x0
 
 FILE DATA = Nt32Pkg/Feature/Microcode/MicrocodeDummy/M0130673321.mcb
@@ -543,10 +549,26 @@ FILE DATA = Nt32Pkg/Feature/Microcode/MicrocodeDummy/M0130673321.mcb
 [FmpPayload.FmpPayloadMicrocode3]
 IMAGE_HEADER_INIT_VERSION = 0x02
 IMAGE_TYPE_ID             = 96d4fdcd-1502-424d-9d4c-9b12d2dcae5c # gMicrocodeFmpImageTypeIdGuid
-IMAGE_INDEX               = 0x3
+IMAGE_INDEX               = 0x1
 HARDWARE_INSTANCE         = 0x0
 
 FILE DATA = Nt32Pkg/Feature/Microcode/MicrocodeDummy/M0130678806.mcb
+
+[FmpPayload.FmpPayloadMicrocode4]
+IMAGE_HEADER_INIT_VERSION = 0x02
+IMAGE_TYPE_ID             = 96d4fdcd-1502-424d-9d4c-9b12d2dcae5c # gMicrocodeFmpImageTypeIdGuid
+IMAGE_INDEX               = 0x1
+HARDWARE_INSTANCE         = 0x0
+
+FILE DATA = Nt32Pkg/Feature/Microcode/MicrocodeDummy/M023067221E.mcb
+
+[FmpPayload.FmpPayloadMicrocode5]
+IMAGE_HEADER_INIT_VERSION = 0x02
+IMAGE_TYPE_ID             = 96d4fdcd-1502-424d-9d4c-9b12d2dcae5c # gMicrocodeFmpImageTypeIdGuid
+IMAGE_INDEX               = 0x1
+HARDWARE_INSTANCE         = 0x0
+
+FILE DATA = Nt32Pkg/Feature/Microcode/MicrocodeDummy/M023067221F.mcb
 
 [Capsule.MicrocodeCapsule1]
 CAPSULE_GUID                = 6dcbd5ed-e82d-4c44-bda1-7194199ad92a # gEfiFmpCapsuleGuid
@@ -571,6 +593,22 @@ CAPSULE_HEADER_SIZE         = 0x20
 CAPSULE_HEADER_INIT_VERSION = 0x1
 
 FMP_PAYLOAD = FmpPayloadMicrocode3
+
+[Capsule.MicrocodeCapsule4]
+CAPSULE_GUID                = 6dcbd5ed-e82d-4c44-bda1-7194199ad92a # gEfiFmpCapsuleGuid
+CAPSULE_FLAGS               = PersistAcrossReset,InitiateReset
+CAPSULE_HEADER_SIZE         = 0x20
+CAPSULE_HEADER_INIT_VERSION = 0x1
+
+FMP_PAYLOAD = FmpPayloadMicrocode4
+
+[Capsule.MicrocodeCapsule5]
+CAPSULE_GUID                = 6dcbd5ed-e82d-4c44-bda1-7194199ad92a # gEfiFmpCapsuleGuid
+CAPSULE_FLAGS               = PersistAcrossReset,InitiateReset
+CAPSULE_HEADER_SIZE         = 0x20
+CAPSULE_HEADER_INIT_VERSION = 0x1
+
+FMP_PAYLOAD = FmpPayloadMicrocode5
 
 !endif
 

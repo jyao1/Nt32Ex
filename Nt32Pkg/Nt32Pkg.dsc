@@ -44,7 +44,23 @@
   # Defines for default states.  These can be changed on the command line.
   # -D FLAG=VALUE
   #
-  DEFINE SECURE_BOOT_ENABLE      = TRUE
+  # Note: Secure Boot feature highly depends on the OpenSSL building. To enable this 
+  #       feature, please follow the instructions found in the file "Patch-HOWTO.txt" 
+  #       located in CryptoPkg\Library\OpensslLib to enable the OpenSSL building first.
+  #
+  DEFINE SECURE_BOOT_ENABLE      = FALSE
+  
+  #
+  # This flag is to enable or disable TLS feature.  
+  # These can be changed on the command line.
+  # -D FLAG=VALUE
+  #
+  # Note: TLS feature highly depends on the OpenSSL building. To enable this 
+  #       feature, please follow the instructions found in the file "Patch-HOWTO.txt" 
+  #       located in CryptoPkg\Library\OpensslLib to enable the OpenSSL building first.
+  #
+  DEFINE TLS_ENABLE      = FALSE
+
   DEFINE SMM_ENABLE              = TRUE
   DEFINE CAPSULE_ENABLE          = TRUE
   DEFINE RECOVERY_ENABLE         = TRUE
@@ -54,7 +70,7 @@
   DEFINE PERF_ENABLE             = FALSE
   DEFINE PROFILE_ENABLE          = FALSE
   DEFINE SHELL_BUILD_ENABLE      = FALSE
-  
+
 #  DEFINE DSC_GLOBAL_BUILD_OPTIONS = /D EFI_SPECIFICATION_VERSION=0x00020000  /D PI_SPECIFICATION_VERSION=0x00000009  /D TIANO_RELEASE_VERSION=0x00080006 /D EFI_DEBUG /D EFI_FIRMWARE_VENDOR="L\"INTEL\"" /D EFI_BUILD_VERSION="L\"EDKII\""
 
 ################################################################################
@@ -153,12 +169,12 @@
   CpuExceptionHandlerLib|MdeModulePkg/Library/CpuExceptionHandlerLibNull/CpuExceptionHandlerLibNull.inf
   LockBoxLib|MdeModulePkg/Library/LockBoxNullLib/LockBoxNullLib.inf
 
+  IntrinsicLib|CryptoPkg/Library/IntrinsicLib/IntrinsicLib.inf
+  OpensslLib|CryptoPkg/Library/OpensslLib/OpensslLib.inf
   RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
   
 !if $(SECURE_BOOT_ENABLE) == TRUE
   PlatformSecureLib|Nt32Pkg/Library/PlatformSecureLib/PlatformSecureLib.inf
-  IntrinsicLib|CryptoPkg/Library/IntrinsicLib/IntrinsicLib.inf
-  OpensslLib|CryptoPkg/Library/OpensslLib/OpensslLib.inf
   TpmMeasurementLib|SecurityPkg/Library/DxeTpmMeasurementLib/DxeTpmMeasurementLib.inf
   AuthVariableLib|SecurityPkg/Library/AuthVariableLib/AuthVariableLib.inf
 !else
@@ -213,9 +229,7 @@
 [LibraryClasses.common.PEIM]
   PcdLib|MdePkg/Library/PeiPcdLib/PeiPcdLib.inf
   OemHookStatusCodeLib|Nt32Pkg/Library/PeiNt32OemHookStatusCodeLib/PeiNt32OemHookStatusCodeLib.inf
-!if $(SECURE_BOOT_ENABLE) == TRUE  
   BaseCryptLib|CryptoPkg/Library/BaseCryptLib/PeiCryptLib.inf
-!endif
   WinNtLib|Nt32Pkg/Library/PeiWinNtLib/PeiWinNtLib.inf
   HashLib|SecurityPkg/Library/HashLibBaseCryptoRouter/HashLibBaseCryptoRouterPei.inf
   Tcg2PhysicalPresenceLib|SecurityPkg/Library/PeiTcg2PhysicalPresenceLib/PeiTcg2PhysicalPresenceLib.inf
@@ -233,9 +247,8 @@
   PeCoffExtraActionLib|Nt32Pkg/Library/DxeNt32PeCoffExtraActionLib/DxeNt32PeCoffExtraActionLib.inf
   ExtractGuidedSectionLib|MdePkg/Library/DxeExtractGuidedSectionLib/DxeExtractGuidedSectionLib.inf
   WinNtLib|Nt32Pkg/Library/DxeWinNtLib/DxeWinNtLib.inf
-!if $(SECURE_BOOT_ENABLE) == TRUE
   BaseCryptLib|CryptoPkg/Library/BaseCryptLib/BaseCryptLib.inf
-!endif
+  TlsLib|CryptoPkg/Library/TlsLib/TlsLib.inf
 
 !if $(PERF_ENABLE) == TRUE
   PerformanceLib|MdeModulePkg/Library/DxePerformanceLib/DxePerformanceLib.inf
@@ -271,9 +284,7 @@
   ReportStatusCodeLib|MdeModulePkg\Library\SmmReportStatusCodeLib/SmmReportStatusCodeLib.inf
   MemoryAllocationLib|MdePkg/Library/SmmMemoryAllocationLib/SmmMemoryAllocationLib.inf
   DebugPrintErrorLevelLib|MdePkg/Library/BaseDebugPrintErrorLevelLib/BaseDebugPrintErrorLevelLib.inf
-!if $(SECURE_BOOT_ENABLE) == TRUE
   BaseCryptLib|CryptoPkg/Library/BaseCryptLib/SmmCryptLib.inf
-!endif
   SmmMemLib|Nt32Pkg/Feature/Smm/Library/SmmMemLibWinNt/SmmMemLib.inf
 !if $(PERF_ENABLE) == TRUE
   PerformanceLib|MdeModulePkg/Library/SmmPerformanceLib/SmmPerformanceLib.inf
@@ -296,9 +307,7 @@
   # Runtime
   #
   ReportStatusCodeLib|MdeModulePkg/Library/RuntimeDxeReportStatusCodeLib/RuntimeDxeReportStatusCodeLib.inf
-!if $(SECURE_BOOT_ENABLE) == TRUE
   BaseCryptLib|CryptoPkg/Library/BaseCryptLib/RuntimeCryptLib.inf
-!endif
 !if $(CAPSULE_ENABLE)
   CapsuleLib|MdeModulePkg/Library/DxeCapsuleLibFmp/DxeRuntimeCapsuleLib.inf
 !endif
@@ -352,7 +361,7 @@
   gEfiNt32PkgTokenSpaceGuid.PcdWinNtFirmwareBlockSize|0x10000
   gEfiMdePkgTokenSpaceGuid.PcdReportStatusCodePropertyMask|0x0f
   gEfiMdeModulePkgTokenSpaceGuid.PcdResetOnMemoryTypeInformationChange|FALSE
-!if $(SECURE_BOOT_ENABLE) == TRUE
+!if $(SECURE_BOOT_ENABLE) == TRUE || $(TLS_ENABLE) == TRUE
   gEfiMdeModulePkgTokenSpaceGuid.PcdMaxVariableSize|0x2000
 !endif
 
@@ -544,6 +553,7 @@
   MdeModulePkg/Universal/MemoryTest/NullMemoryTestDxe/NullMemoryTestDxe.inf
   Nt32Pkg/WinNtThunkDxe/WinNtThunkDxe.inf
   Nt32Pkg/CpuRuntimeDxe/CpuRuntimeDxe.inf
+  Nt32Pkg/MpServicesDxe/MpServicesDxe.inf
 !if $(SMM_ENABLE)
   MdeModulePkg/Universal/FaultTolerantWriteDxe/FaultTolerantWriteSmm.inf
   MdeModulePkg/Universal/FaultTolerantWriteDxe/FaultTolerantWriteSmmDxe.inf
@@ -654,6 +664,11 @@
   NetworkPkg/DnsDxe/DnsDxe.inf
   NetworkPkg/HttpDxe/HttpDxe.inf
   NetworkPkg/HttpUtilitiesDxe/HttpUtilitiesDxe.inf
+!endif
+   
+!if $(TLS_ENABLE) == TRUE
+  NetworkPkg/TlsDxe/TlsDxe.inf
+  NetworkPkg/TlsAuthConfigDxe/TlsAuthConfigDxe.inf
 !endif
 
   MdeModulePkg/Universal/BdsDxe/BdsDxe.inf {

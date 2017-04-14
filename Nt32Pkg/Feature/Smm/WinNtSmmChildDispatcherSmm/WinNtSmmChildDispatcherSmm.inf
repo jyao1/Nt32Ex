@@ -37,6 +37,7 @@
   SmmServicesTableLib
   UefiDriverEntryPoint
   ReportStatusCodeLib
+  SmiHandlerProfileLib
 
 [Protocols]
   gEfiSmmSwDispatch2ProtocolGuid

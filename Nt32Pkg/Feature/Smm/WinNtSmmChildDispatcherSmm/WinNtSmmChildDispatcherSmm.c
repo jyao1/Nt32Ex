@@ -12,6 +12,8 @@
 **/
 #include "WinNtSmmChildDispatcherSmm.h"
 
+#include <Library/SmiHandlerProfileLib.h>
+
 PRIVATE_DATA          mPrivateData = {
   { NULL },
   NULL,
@@ -214,6 +216,8 @@ WinNtSmmSwDispatch2Register (
   Record->DispatchHandle    = (EFI_HANDLE) (&Record->Link);
   *DispatchHandle = (EFI_HANDLE)(&Record->Link);
 
+  SmiHandlerProfileRegisterHandler (&gEfiSmmSwDispatch2ProtocolGuid, DispatchFunction, (UINTN)RETURN_ADDRESS (0), RegisterContext, sizeof(*RegisterContext));
+
   return EFI_SUCCESS;
 }
 
@@ -235,6 +239,8 @@ WinNtSmmSwDispatch2UnRegister (
   }
 
   RecordToDelete = DATABASE_RECORD_FROM_LINK (DispatchHandle);
+
+  SmiHandlerProfileUnregisterHandler (&gEfiSmmSwDispatch2ProtocolGuid, RecordToDelete->DispatchFunction, &RecordToDelete->RegisterContext, sizeof(RecordToDelete->RegisterContext));
 
   RemoveEntryList (&RecordToDelete->Link);
 

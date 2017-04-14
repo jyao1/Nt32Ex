@@ -4,7 +4,7 @@
 # The Emulation Platform can be used to debug individual modules, prior to creating
 #    a real platform. This also provides an example for how an DSC is created.
 #
-# Copyright (c) 2006 - 2016, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
 # Copyright (c) 2015, Hewlett-Packard Development Company, L.P.<BR>
 # (C) Copyright 2016 Hewlett Packard Enterprise Development LP<BR>
 #
@@ -59,7 +59,24 @@
   #       feature, please follow the instructions found in the file "Patch-HOWTO.txt" 
   #       located in CryptoPkg\Library\OpensslLib to enable the OpenSSL building first.
   #
-  DEFINE TLS_ENABLE      = FALSE
+  DEFINE TLS_ENABLE = FALSE
+  
+  #
+  # Indicates whether HTTP connections (i.e., unsecured) are permitted or not.
+  # -D FLAG=VALUE
+  #
+  # Note: If ALLOW_HTTP_CONNECTIONS is TRUE, HTTP connections are allowed. Both 
+  #       the "https://" and "http://" URI schemes are permitted. Otherwise, HTTP 
+  #       connections are denied. Only the "https://" URI scheme is permitted.
+  #
+  DEFINE ALLOW_HTTP_CONNECTIONS = TRUE
+
+  #
+  # This flag is to enable or disable IPv6 network stack.
+  # These can be changed on the command line.
+  # -D FLAG=VALUE
+  #
+  DEFINE NETWORK_IP6_ENABLE = FALSE
 
   DEFINE SMM_ENABLE              = TRUE
   DEFINE CAPSULE_ENABLE          = TRUE
@@ -69,6 +86,7 @@
   DEFINE NETWORK_ENABLE          = FALSE
   DEFINE PERF_ENABLE             = FALSE
   DEFINE PROFILE_ENABLE          = FALSE
+  DEFINE SMI_HANDLER_PROFILE_ENABLE = FALSE
   DEFINE SHELL_BUILD_ENABLE      = FALSE
 
 #  DEFINE DSC_GLOBAL_BUILD_OPTIONS = /D EFI_SPECIFICATION_VERSION=0x00020000  /D PI_SPECIFICATION_VERSION=0x00000009  /D TIANO_RELEASE_VERSION=0x00080006 /D EFI_DEBUG /D EFI_FIRMWARE_VENDOR="L\"INTEL\"" /D EFI_BUILD_VERSION="L\"EDKII\""
@@ -110,7 +128,7 @@
   CacheMaintenanceLib|MdePkg/Library/BaseCacheMaintenanceLib/BaseCacheMaintenanceLib.inf
   PeCoffLib|MdePkg/Library/BasePeCoffLib/BasePeCoffLib.inf
   PeCoffGetEntryPointLib|MdePkg/Library/BasePeCoffGetEntryPointLib/BasePeCoffGetEntryPointLib.inf
-  SortLib|MdeModulePkg/Library/BaseSortLib/BaseSortLib.inf
+  SortLib|MdeModulePkg/Library/UefiSortLib/UefiSortLib.inf
   #
   # UEFI & PI
   #
@@ -128,7 +146,7 @@
   DxeServicesTableLib|MdePkg/Library/DxeServicesTableLib/DxeServicesTableLib.inf
   UefiBootManagerLib|MdeModulePkg/Library/UefiBootManagerLib/UefiBootManagerLib.inf
   FileExplorerLib|MdeModulePkg/Library/FileExplorerLib/FileExplorerLib.inf
-  
+
   #
   # Generic Modules
   #
@@ -137,6 +155,7 @@
   NetLib|MdeModulePkg/Library/DxeNetLib/DxeNetLib.inf
   IpIoLib|MdeModulePkg/Library/DxeIpIoLib/DxeIpIoLib.inf
   UdpIoLib|MdeModulePkg/Library/DxeUdpIoLib/DxeUdpIoLib.inf
+  TcpIoLib|MdeModulePkg/Library/DxeTcpIoLib/DxeTcpIoLib.inf
   HttpLib|MdeModulePkg/Library/DxeHttpLib/DxeHttpLib.inf
   DpcLib|MdeModulePkg/Library/DxeDpcLib/DxeDpcLib.inf
   OemHookStatusCodeLib|MdeModulePkg/Library/OemHookStatusCodeLibNull/OemHookStatusCodeLibNull.inf
@@ -146,6 +165,12 @@
   TimerLib|Nt32Pkg/Library/TscTimerLib/TscTimerLib.inf
 !else
   TimerLib|MdePkg/Library/BaseTimerLibNullTemplate/BaseTimerLibNullTemplate.inf
+!endif
+
+!if $(SMI_HANDLER_PROFILE_ENABLE) == TRUE
+  SmiHandlerProfileLib|MdeModulePkg/Library/SmmSmiHandlerProfileLib/SmmSmiHandlerProfileLib.inf
+!else
+  SmiHandlerProfileLib|MdePkg/Library/SmiHandlerProfileLibNull/SmiHandlerProfileLibNull.inf
 !endif
 
   SerialPortLib|MdePkg/Library/BaseSerialPortLibNull/BaseSerialPortLibNull.inf
@@ -170,7 +195,11 @@
   LockBoxLib|MdeModulePkg/Library/LockBoxNullLib/LockBoxNullLib.inf
 
   IntrinsicLib|CryptoPkg/Library/IntrinsicLib/IntrinsicLib.inf
+!if $(TLS_ENABLE) == TRUE
   OpensslLib|CryptoPkg/Library/OpensslLib/OpensslLib.inf
+!else
+  OpensslLib|CryptoPkg/Library/OpensslLib/OpensslLibCrypto.inf
+!endif
   RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
   
 !if $(SECURE_BOOT_ENABLE) == TRUE
@@ -271,7 +300,7 @@
   SmmCorePlatformHookLib|MdeModulePkg/Library/SmmCorePlatformHookLibNull/SmmCorePlatformHookLibNull.inf
   MemoryAllocationLib|MdeModulePkg/Library/PiSmmCoreMemoryAllocationLib/PiSmmCoreMemoryAllocationLib.inf
   SmmServicesTableLib|MdeModulePkg/Library/PiSmmCoreSmmServicesTableLib/PiSmmCoreSmmServicesTableLib.inf
-  ReportStatusCodeLib|MdeModulePkg/Library\SmmReportStatusCodeLib/SmmReportStatusCodeLib.inf
+  ReportStatusCodeLib|MdeModulePkg/Library/SmmReportStatusCodeLib/SmmReportStatusCodeLib.inf
   DebugPrintErrorLevelLib|MdePkg/Library/BaseDebugPrintErrorLevelLib/BaseDebugPrintErrorLevelLib.inf
   SmmMemLib|Nt32Pkg/Feature/Smm/Library/SmmMemLibWinNt/SmmMemLib.inf
 !if $(PERF_ENABLE) == TRUE
@@ -343,6 +372,9 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdMemoryProfilePropertyMask|0x0
   gEfiMdeModulePkgTokenSpaceGuid.PcdMemoryProfileMemoryType|0x67F
 !endif
+!if $(SMI_HANDLER_PROFILE_ENABLE)
+  gEfiMdeModulePkgTokenSpaceGuid.PcdSmiHandlerProfilePropertyMask|1
+!endif
 
 !if $(CAPSULE_ENABLE) || $(RECOVERY_ENABLE)
 #  gEfiNt32PkgTokenSpaceGuid.PcdWinNtMemorySizeForSecMain|L"128!64"
@@ -363,6 +395,12 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdResetOnMemoryTypeInformationChange|FALSE
 !if $(SECURE_BOOT_ENABLE) == TRUE || $(TLS_ENABLE) == TRUE
   gEfiMdeModulePkgTokenSpaceGuid.PcdMaxVariableSize|0x2000
+!endif
+
+!if $(NETWORK_ENABLE) == TRUE
+!if $(ALLOW_HTTP_CONNECTIONS) == TRUE
+  gEfiNetworkPkgTokenSpaceGuid.PcdAllowHttpConnections|TRUE
+!endif
 !endif
 
 !ifndef $(USE_OLD_SHELL)
@@ -653,12 +691,22 @@
   MdeModulePkg/Universal/Network/MnpDxe/MnpDxe.inf
   MdeModulePkg/Universal/Network/VlanConfigDxe/VlanConfigDxe.inf
   MdeModulePkg/Universal/Network/Mtftp4Dxe/Mtftp4Dxe.inf
-  MdeModulePkg/Universal/Network/Tcp4Dxe/Tcp4Dxe.inf
   MdeModulePkg/Universal/Network/Udp4Dxe/Udp4Dxe.inf
-  MdeModulePkg/Universal/Network/UefiPxeBcDxe/UefiPxeBcDxe.inf
   Nt32Pkg/SnpNt32Dxe/SnpNt32Dxe.inf
 
+!if $(NETWORK_IP6_ENABLE) == TRUE
+  NetworkPkg/Ip6Dxe/Ip6Dxe.inf
+  NetworkPkg/Dhcp6Dxe/Dhcp6Dxe.inf
+  NetworkPkg/TcpDxe/TcpDxe.inf
+  NetworkPkg/Udp6Dxe/Udp6Dxe.inf
+  NetworkPkg/Mtftp6Dxe/Mtftp6Dxe.inf
+  NetworkPkg/UefiPxeBcDxe/UefiPxeBcDxe.inf
+  NetworkPkg/IScsiDxe/IScsiDxe.inf
+!else
+  MdeModulePkg/Universal/Network/Tcp4Dxe/Tcp4Dxe.inf
+  MdeModulePkg/Universal/Network/UefiPxeBcDxe/UefiPxeBcDxe.inf
   MdeModulePkg/Universal/Network/IScsiDxe/IScsiDxe.inf
+!endif
 
   NetworkPkg/HttpBootDxe/HttpBootDxe.inf
   NetworkPkg/DnsDxe/DnsDxe.inf
@@ -705,6 +753,27 @@
   }
   MdeModulePkg/Logo/LogoDxe.inf
 
+!if $(SHELL_BUILD_ENABLE) == TRUE
+  ShellPkg/Application/Shell/Shell.inf {
+    <PcdsFixedAtBuild>
+      gEfiShellPkgTokenSpaceGuid.PcdShellLibAutoInitialize|FALSE
+    <LibraryClasses>
+      NULL|ShellPkg/Library/UefiShellLevel2CommandsLib/UefiShellLevel2CommandsLib.inf
+      NULL|ShellPkg/Library/UefiShellLevel1CommandsLib/UefiShellLevel1CommandsLib.inf
+      NULL|ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.inf
+      NULL|ShellPkg/Library/UefiShellDriver1CommandsLib/UefiShellDriver1CommandsLib.inf
+      NULL|ShellPkg/Library/UefiShellInstall1CommandsLib/UefiShellInstall1CommandsLib.inf
+      NULL|ShellPkg/Library/UefiShellDebug1CommandsLib/UefiShellDebug1CommandsLib.inf
+      NULL|ShellPkg/Library/UefiShellNetwork1CommandsLib/UefiShellNetwork1CommandsLib.inf
+      NULL|ShellPkg/Library/UefiShellNetwork2CommandsLib/UefiShellNetwork2CommandsLib.inf
+      ShellLib|ShellPkg/Library/UefiShellLib/UefiShellLib.inf
+      ShellCommandLib|ShellPkg/Library/UefiShellCommandLib/UefiShellCommandLib.inf
+      HandleParsingLib|ShellPkg/Library/UefiHandleParsingLib/UefiHandleParsingLib.inf
+      BcfgCommandLib|ShellPkg/Library/UefiShellBcfgCommandLib/UefiShellBcfgCommandLib.inf
+      FileHandleLib|MdePkg/Library/UefiFileHandleLib/UefiFileHandleLib.inf
+  }
+!endif
+
 !if $(TPM2_ENABLE)
   SecurityPkg/Tcg/Tcg2Dxe/Tcg2Dxe.inf {
     <LibraryClasses>
@@ -739,28 +808,6 @@
   }
 !endif
 
-!if $(SHELL_BUILD_ENABLE) == TRUE
-  ShellPkg/Application/Shell/Shell.inf {
-    <PcdsFixedAtBuild>
-      gEfiShellPkgTokenSpaceGuid.PcdShellLibAutoInitialize|FALSE
-    <BuildOptions>
-      *_*_*_CC_FLAGS = /FAcs
-    <LibraryClasses>
-      FileHandleLib|MdePkg/Library/UefiFileHandleLib/UefiFileHandleLib.inf
-      SortLib|MdeModulePkg/Library/UefiSortLib/UefiSortLib.inf
-      ShellLib|ShellPkg/Library/UefiShellLib/UefiShellLib.inf
-      ShellCommandLib|ShellPkg/Library/UefiShellCommandLib/UefiShellCommandLib.inf
-      HandleParsingLib|ShellPkg/Library/UefiHandleParsingLib/UefiHandleParsingLib.inf
-      BcfgCommandLib|ShellPkg/Library/UefiShellBcfgCommandLib/UefiShellBcfgCommandLib.inf
-      NULL|ShellPkg/Library/UefiShellLevel2CommandsLib/UefiShellLevel2CommandsLib.inf
-      NULL|ShellPkg/Library/UefiShellLevel1CommandsLib/UefiShellLevel1CommandsLib.inf
-      NULL|ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.inf
-      NULL|ShellPkg/Library/UefiShellDriver1CommandsLib/UefiShellDriver1CommandsLib.inf
-      NULL|ShellPkg/Library/UefiShellInstall1CommandsLib/UefiShellInstall1CommandsLib.inf
-      NULL|ShellPkg/Library/UefiShellDebug1CommandsLib/UefiShellDebug1CommandsLib.inf
-  }
-!endif
-
 !if $(PROFILE_ENABLE)
   MdeModulePkg/Application/MemoryProfileInfo/MemoryProfileInfo.inf {
     <LibraryClasses>
@@ -768,6 +815,10 @@
       FileHandleLib|MdePkg/Library/UefiFileHandleLib/UefiFileHandleLib.inf
       SortLib|MdeModulePkg/Library/UefiSortLib/UefiSortLib.inf
   }
+!endif
+
+!if $(SMI_HANDLER_PROFILE_ENABLE) == TRUE
+  MdeModulePkg/Application/SmiHandlerProfileInfo/SmiHandlerProfileInfo.inf
 !endif
 
 !if $(PERF_ENABLE) == TRUE
